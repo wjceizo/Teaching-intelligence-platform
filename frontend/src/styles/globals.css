@@ -1,0 +1,25 @@
+﻿@import "tailwindcss";
+
+:root {
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --muted: 210 30% 92%;
+  --border: 214 32% 86%;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 20% 98%;
+  --primary: 217 91% 60%;
+  --muted: 222 30% 20%;
+  --border: 217 19% 28%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
