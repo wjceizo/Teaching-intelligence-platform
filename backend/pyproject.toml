@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "math-edu-backend"
 version = "0.1.0"
 description = "Backend service for math education platform"
