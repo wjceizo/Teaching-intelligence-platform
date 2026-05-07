@@ -1,38 +1,56 @@
 ﻿import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { ApiError, useLogin } from "../lib/api";
+import { ApiError, useRegister } from "../lib/api";
 
-export function LoginPage() {
+export function RegisterPage() {
   const navigate = useNavigate();
-  const loginMutation = useLogin();
+  const registerMutation = useRegister();
 
-  const [email, setEmail] = useState("student@example.com");
-  const [password, setPassword] = useState("Password123");
-  const [rememberMe, setRememberMe] = useState(true);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
+    if (password !== confirmPassword) {
+      setError("两次输入的密码不一致");
+      return;
+    }
+
     try {
-      await loginMutation.mutateAsync({ email, password });
-      navigate("/");
+      await registerMutation.mutateAsync({ username, email, password });
+      navigate("/login");
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError("登录失败，请稍后再试。");
+        setError("注册失败，请稍后再试。");
       }
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-100 via-cyan-50 to-sky-100 px-4">
       <div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-lg">
-        <h1 className="mb-5 text-center text-2xl font-semibold">登录平台</h1>
+        <h1 className="mb-5 text-center text-2xl font-semibold">注册账号</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="mb-1 block text-sm">
+              用户名
+            </label>
+            <input
+              id="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2"
+            />
+          </div>
+
           <div>
             <label htmlFor="email" className="mb-1 block text-sm">
               邮箱
@@ -59,29 +77,33 @@ export function LoginPage() {
             />
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
+          <div>
+            <label htmlFor="confirmPassword" className="mb-1 block text-sm">
+              确认密码
+            </label>
             <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2"
             />
-            记住我
-          </label>
+          </div>
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
           <button
             type="submit"
-            disabled={loginMutation.isPending}
+            disabled={registerMutation.isPending}
             className="w-full rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50"
           >
-            {loginMutation.isPending ? "登录中..." : "登录"}
+            {registerMutation.isPending ? "注册中..." : "注册"}
           </button>
 
           <p className="text-center text-sm text-foreground/70">
-            还没有账号？
-            <Link to="/register" className="ml-1 text-primary underline">
-              去注册
+            已有账号？
+            <Link to="/login" className="ml-1 text-primary underline">
+              去登录
             </Link>
           </p>
         </form>

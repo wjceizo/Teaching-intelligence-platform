@@ -1,4 +1,4 @@
-﻿import { useQuery } from "@tanstack/react-query";
+﻿import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useAuthStore } from "../stores/authStore";
 
@@ -16,7 +16,6 @@ export class ApiError extends Error {
 
 function buildHeaders(headers?: HeadersInit): Headers {
   const mergedHeaders = new Headers(headers);
-  mergedHeaders.set("Content-Type", "application/json");
 
   const token = useAuthStore.getState().token;
   if (token) {
@@ -58,6 +57,37 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return (await response.json()) as T;
 }
 
+export interface AuthTokens {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  role: "student" | "teacher" | "admin";
+  avatar_url: string | null;
+  created_at: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface RegisterInput {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface UpdateProfileInput {
+  username?: string;
+  avatar_url?: string;
+}
+
 export interface HealthResponse {
   data: {
     status: string;
@@ -69,5 +99,64 @@ export function useHealth() {
   return useQuery({
     queryKey: ["health"],
     queryFn: () => apiFetch<HealthResponse>("/health"),
+  });
+}
+
+export function useLogin() {
+  return useMutation({
+    mutationFn: async (input: LoginInput) => {
+      const formData = new URLSearchParams();
+      formData.set("username", input.email);
+      formData.set("password", input.password);
+
+      const tokens = await apiFetch<AuthTokens>("/v1/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData.toString(),
+      });
+
+      useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
+
+      const me = await apiFetch<AuthUser>("/v1/auth/me");
+      useAuthStore.getState().setUser({ id: me.id, name: me.username, role: me.role });
+
+      return { tokens, me };
+    },
+  });
+}
+
+export function useRegister() {
+  return useMutation({
+    mutationFn: async (input: RegisterInput) => {
+      return apiFetch<AuthUser>("/v1/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      });
+    },
+  });
+}
+
+export function useMe() {
+  return useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: () => apiFetch<AuthUser>("/v1/auth/me"),
+  });
+}
+
+export function useUpdateProfile() {
+  return useMutation({
+    mutationFn: (input: UpdateProfileInput) =>
+      apiFetch<AuthUser>("/v1/auth/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
   });
 }
