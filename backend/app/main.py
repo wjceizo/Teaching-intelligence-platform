@@ -7,8 +7,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from app.config import get_settings
+from app.database import AsyncSessionLocal
+from app.models.user import User
+from app.routers import auth_router
+from app.services.auth_service import AuthService
 
 settings = get_settings()
 
@@ -45,6 +50,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
+
 
 class HealthData(BaseModel):
     status: str
@@ -53,6 +60,24 @@ class HealthData(BaseModel):
 
 class HealthResponse(BaseModel):
     data: HealthData
+
+
+@app.on_event("startup")
+async def seed_default_user() -> None:
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == "student@example.com"))
+        existing_user = result.scalar_one_or_none()
+        if existing_user is not None:
+            return
+
+        user = User(
+            username="student",
+            email="student@example.com",
+            password_hash=AuthService._hash_password("Password123"),
+            role="student",
+        )
+        db.add(user)
+        await db.commit()
 
 
 @app.exception_handler(HTTPException)
@@ -82,3 +107,8 @@ async def health_check() -> dict[str, dict[str, str]]:
             "version": settings.app_version,
         }
     }
+
+
+@app.get("/api/health", response_model=HealthResponse)
+async def health_check_api() -> dict[str, dict[str, str]]:
+    return await health_check()

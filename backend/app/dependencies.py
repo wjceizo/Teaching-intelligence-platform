@@ -1,51 +1,56 @@
 ﻿from __future__ import annotations
 
-from fastapi import Header, HTTPException, status
+from collections.abc import Callable
+
+from fastapi import Depends, Header, HTTPException, status
 from jose import JWTError, jwt
-from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
-
-
-class CurrentUser(BaseModel):
-    user_id: str
-    role: str = "student"
-
+from app.models.user import User
 
 settings = get_settings()
 
 
-async def get_current_user(authorization: str | None = Header(default=None)) -> CurrentUser:
+async def get_current_user(
+    authorization: str | None = Header(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> User:
     if authorization is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing Authorization header",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Authorization header")
 
     scheme, _, token = authorization.partition(" ")
     if scheme.lower() != "bearer" or not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization scheme",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization scheme")
 
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     except JWTError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token") from exc
+
+    if payload.get("type") != "access":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token")
 
     user_id_value = payload.get("sub")
     if not isinstance(user_id_value, str) or not user_id_value.strip():
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing subject",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing subject")
 
-    role_value = payload.get("role", "student")
-    role = role_value if isinstance(role_value, str) and role_value else "student"
+    result = await db.execute(select(User).where(User.id == user_id_value))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    return CurrentUser(user_id=user_id_value, role=role)
+    return user
+
+
+def require_role(*roles: str) -> Callable[[User], User]:
+    allowed_roles = set(roles)
+
+    async def dependency(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+        return current_user
+
+    return dependency
