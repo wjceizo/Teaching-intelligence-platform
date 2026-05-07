@@ -141,10 +141,11 @@ export function useRegister() {
   });
 }
 
-export function useMe() {
+export function useMe(enabled = true) {
   return useQuery({
     queryKey: ["auth", "me"],
     queryFn: () => apiFetch<AuthUser>("/v1/auth/me"),
+    enabled,
   });
 }
 

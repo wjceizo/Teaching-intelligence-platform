@@ -18,7 +18,7 @@ export function LoginPage() {
 
     try {
       await loginMutation.mutateAsync({ email, password });
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message);

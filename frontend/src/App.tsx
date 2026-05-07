@@ -1,6 +1,8 @@
-﻿import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "./components/layout/AppLayout";
+import { useMe } from "./lib/api";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -19,10 +21,44 @@ function PlaceholderPage({ title }: PlaceholderPageProps) {
   );
 }
 
-function ProtectedRoute() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+function AuthBootstrap() {
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const token = useAuthStore((state) => state.token);
+  const setUser = useAuthStore((state) => state.setUser);
+  const logout = useAuthStore((state) => state.logout);
+  const meQuery = useMe(hasHydrated && Boolean(token));
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    if (!meQuery.data) {
+      return;
+    }
+
+    setUser({
+      id: meQuery.data.id,
+      name: meQuery.data.username,
+      role: meQuery.data.role,
+    });
+  }, [meQuery.data, setUser]);
+
+  useEffect(() => {
+    if (hasHydrated && token && meQuery.isError) {
+      logout();
+    }
+  }, [hasHydrated, token, meQuery.isError, logout]);
+
+  return null;
+}
+
+function ProtectedRoute() {
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const token = useAuthStore((state) => state.token);
+
+  if (!hasHydrated) {
+    return null;
+  }
+
+  if (!isAuthenticated || !token) {
     return <Navigate to="/login" replace />;
   }
 
@@ -30,10 +66,34 @@ function ProtectedRoute() {
 }
 
 function GuestRoute() {
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const token = useAuthStore((state) => state.token);
 
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+  if (!hasHydrated) {
+    return null;
+  }
+
+  if (isAuthenticated && token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+}
+
+interface RoleRouteProps {
+  allowedRoles: Array<"student" | "teacher" | "admin">;
+}
+
+function RoleRoute({ allowedRoles }: RoleRouteProps) {
+  const user = useAuthStore((state) => state.user);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/forbidden" replace />;
   }
 
   return <Outlet />;
@@ -41,24 +101,33 @@ function GuestRoute() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<GuestRoute />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-      </Route>
-
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/courses" element={<PlaceholderPage title="课程" />} />
-          <Route path="/qa" element={<PlaceholderPage title="问答" />} />
-          <Route path="/notes" element={<PlaceholderPage title="笔记" />} />
-          <Route path="/codelab" element={<PlaceholderPage title="实训" />} />
-          <Route path="/exam" element={<PlaceholderPage title="测验" />} />
+    <>
+      <AuthBootstrap />
+      <Routes>
+        <Route element={<GuestRoute />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Route>
-      </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/courses" element={<PlaceholderPage title="课程" />} />
+            <Route path="/qa" element={<PlaceholderPage title="问答" />} />
+            <Route path="/notes" element={<PlaceholderPage title="笔记" />} />
+            <Route path="/codelab" element={<PlaceholderPage title="实训" />} />
+            <Route path="/exam" element={<PlaceholderPage title="测验" />} />
+
+            <Route element={<RoleRoute allowedRoles={["teacher", "admin"]} />}>
+              <Route path="/qa/manage" element={<PlaceholderPage title="教师答疑管理" />} />
+            </Route>
+            <Route path="/forbidden" element={<PlaceholderPage title="无权限访问该页面" />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </>
   );
 }

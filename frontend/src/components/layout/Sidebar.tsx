@@ -9,7 +9,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "仪表盘", to: "/" },
+  { label: "仪表盘", to: "/dashboard" },
   { label: "课程", to: "/courses" },
   { label: "问答", to: "/qa" },
   { label: "笔记", to: "/notes" },
