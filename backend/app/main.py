@@ -12,7 +12,7 @@ from sqlalchemy import select
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models.user import User
-from app.routers import auth_router
+from app.routers import auth_router, courses_router
 from app.services.auth_service import AuthService
 
 settings = get_settings()
@@ -51,6 +51,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(courses_router)
 
 
 class HealthData(BaseModel):
@@ -67,16 +68,26 @@ async def seed_default_user() -> None:
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(User).where(User.email == "student@example.com"))
         existing_user = result.scalar_one_or_none()
-        if existing_user is not None:
-            return
+        if existing_user is None:
+            user = User(
+                username="student",
+                email="student@example.com",
+                password_hash=AuthService._hash_password("Password123"),
+                role="student",
+            )
+            db.add(user)
 
-        user = User(
-            username="student",
-            email="student@example.com",
-            password_hash=AuthService._hash_password("Password123"),
-            role="student",
-        )
-        db.add(user)
+        teacher_result = await db.execute(select(User).where(User.email == "teacher@example.com"))
+        existing_teacher = teacher_result.scalar_one_or_none()
+        if existing_teacher is None:
+            teacher = User(
+                username="teacher",
+                email="teacher@example.com",
+                password_hash=AuthService._hash_password("Password123"),
+                role="teacher",
+            )
+            db.add(teacher)
+
         await db.commit()
 
 

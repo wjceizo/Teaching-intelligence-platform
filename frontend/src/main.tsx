@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import "./styles/globals.css";
+import "katex/dist/katex.min.css";
 import { useUIStore } from "./stores/uiStore";
 
 const queryClient = new QueryClient();

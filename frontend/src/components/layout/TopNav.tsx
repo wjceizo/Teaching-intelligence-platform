@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { useAuthStore } from "../../stores/authStore";
 import { useUIStore } from "../../stores/uiStore";
@@ -10,7 +10,29 @@ export function TopNav() {
   const setTheme = useUIStore((state) => state.setTheme);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
   const nextTheme = useMemo(() => (theme === "light" ? "dark" : "light"), [theme]);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const openMenu = () => {
+    clearCloseTimer();
+    setMenuOpen(true);
+  };
+
+  const closeMenuLater = () => {
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      setMenuOpen(false);
+    }, 320);
+  };
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4">
@@ -34,23 +56,28 @@ export function TopNav() {
           {theme === "light" ? "暗色" : "亮色"}
         </button>
 
-        <details className="relative">
-          <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1 text-sm hover:bg-muted">
+        <div className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenuLater}>
+          <button type="button" className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted">
             {user?.name ?? "访客"}
-          </summary>
-          <div className="absolute right-0 mt-2 w-36 rounded-md border border-border bg-background p-1 shadow-md">
-            <a href="#" className="block rounded px-2 py-1 text-sm hover:bg-muted">
-              个人中心
-            </a>
-            <button
-              type="button"
-              onClick={logout}
-              className="w-full rounded px-2 py-1 text-left text-sm hover:bg-muted"
-            >
-              退出
-            </button>
-          </div>
-        </details>
+          </button>
+          {menuOpen ? (
+            <div className="absolute right-0 z-20 mt-2 w-36 rounded-md border border-border bg-white p-1 shadow-lg">
+              <button
+                type="button"
+                className="block w-full rounded px-2 py-1 text-left text-sm hover:bg-muted"
+              >
+                个人中心
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="block w-full rounded px-2 py-1 text-left text-sm hover:bg-muted"
+              >
+                退出
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );

@@ -1,4 +1,16 @@
-﻿from app.schemas.user import (
+from app.schemas.course import (
+    ChapterCreate,
+    ChapterDetailResponse,
+    ChapterReorder,
+    ChapterResponse,
+    ChapterUpdate,
+    CourseCreate,
+    CourseResponse,
+    CourseUpdate,
+    PaginatedCourseResponse,
+    ProgressUpdate,
+)
+from app.schemas.user import (
     PasswordChange,
     RefreshTokenRequest,
     TokenResponse,
@@ -16,4 +28,14 @@ __all__ = [
     "UserUpdate",
     "PasswordChange",
     "RefreshTokenRequest",
+    "CourseCreate",
+    "CourseUpdate",
+    "ChapterCreate",
+    "ChapterUpdate",
+    "ChapterReorder",
+    "CourseResponse",
+    "ChapterResponse",
+    "ChapterDetailResponse",
+    "ProgressUpdate",
+    "PaginatedCourseResponse",
 ]

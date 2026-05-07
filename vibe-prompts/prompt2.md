@@ -1,4 +1,4 @@
-# 数学教育智能体平台 · Vibe Coding Prompt 指南（Phase 0 & 1）
+# 数学教育智能体平台 · Vibe Coding Prompt 指南
 
 ## 总体规划
 

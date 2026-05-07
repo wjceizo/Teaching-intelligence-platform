@@ -3,6 +3,9 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "./components/layout/AppLayout";
 import { useMe } from "./lib/api";
+import { CourseDetailPage } from "./pages/CourseDetailPage";
+import { CourseEditorPage } from "./pages/CourseEditorPage";
+import { CourseListPage } from "./pages/CourseListPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -32,7 +35,6 @@ function AuthBootstrap() {
     if (!meQuery.data) {
       return;
     }
-
     setUser({
       id: meQuery.data.id,
       name: meQuery.data.username,
@@ -57,11 +59,9 @@ function ProtectedRoute() {
   if (!hasHydrated) {
     return null;
   }
-
   if (!isAuthenticated || !token) {
     return <Navigate to="/login" replace />;
   }
-
   return <Outlet />;
 }
 
@@ -73,11 +73,9 @@ function GuestRoute() {
   if (!hasHydrated) {
     return null;
   }
-
   if (isAuthenticated && token) {
     return <Navigate to="/dashboard" replace />;
   }
-
   return <Outlet />;
 }
 
@@ -87,15 +85,12 @@ interface RoleRouteProps {
 
 function RoleRoute({ allowedRoles }: RoleRouteProps) {
   const user = useAuthStore((state) => state.user);
-
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/forbidden" replace />;
   }
-
   return <Outlet />;
 }
 
@@ -113,15 +108,19 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/courses" element={<PlaceholderPage title="课程" />} />
+            <Route path="/courses" element={<CourseListPage />} />
+            <Route path="/courses/:id" element={<CourseDetailPage />} />
+            <Route path="/courses/:id/chapters/:chapterId" element={<CourseDetailPage />} />
+
+            <Route element={<RoleRoute allowedRoles={["teacher", "admin"]} />}>
+              <Route path="/courses/:id/edit" element={<CourseEditorPage />} />
+              <Route path="/qa/manage" element={<PlaceholderPage title="教师答疑管理" />} />
+            </Route>
+
             <Route path="/qa" element={<PlaceholderPage title="问答" />} />
             <Route path="/notes" element={<PlaceholderPage title="笔记" />} />
             <Route path="/codelab" element={<PlaceholderPage title="实训" />} />
             <Route path="/exam" element={<PlaceholderPage title="测验" />} />
-
-            <Route element={<RoleRoute allowedRoles={["teacher", "admin"]} />}>
-              <Route path="/qa/manage" element={<PlaceholderPage title="教师答疑管理" />} />
-            </Route>
             <Route path="/forbidden" element={<PlaceholderPage title="无权限访问该页面" />} />
           </Route>
         </Route>

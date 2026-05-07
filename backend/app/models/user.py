@@ -1,7 +1,7 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from sqlalchemy import Enum, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.common import TimestampMixin, UUIDPrimaryKeyMixin
@@ -19,3 +19,7 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default="student",
     )
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    courses_taught: Mapped[list["Course"]] = relationship(back_populates="teacher")
+    enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="user")
+    chapter_progresses: Mapped[list["ChapterProgress"]] = relationship(back_populates="user")

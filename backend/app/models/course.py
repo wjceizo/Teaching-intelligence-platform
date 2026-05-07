@@ -1,8 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import TIMESTAMP
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -15,12 +15,20 @@ class Course(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     teacher_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
-    cover_image: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    cover_image: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         Enum("draft", "published", name="course_status", native_enum=False),
         nullable=False,
         default="draft",
     )
+
+    teacher: Mapped["User"] = relationship(back_populates="courses_taught")
+    chapters: Mapped[list["Chapter"]] = relationship(
+        back_populates="course",
+        cascade="all, delete-orphan",
+        order_by="Chapter.order_index",
+    )
+    enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="course")
 
 
 class Chapter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -35,6 +43,9 @@ class Chapter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    course: Mapped["Course"] = relationship(back_populates="chapters")
+    progresses: Mapped[list["ChapterProgress"]] = relationship(back_populates="chapter")
+
 
 class Enrollment(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "enrollments"
@@ -43,6 +54,9 @@ class Enrollment(UUIDPrimaryKeyMixin, Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     course_id: Mapped[str] = mapped_column(ForeignKey("courses.id"), nullable=False, index=True)
     enrolled_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="enrollments")
+    course: Mapped["Course"] = relationship(back_populates="enrollments")
 
 
 class ChapterProgress(UUIDPrimaryKeyMixin, Base):
@@ -57,3 +71,6 @@ class ChapterProgress(UUIDPrimaryKeyMixin, Base):
     )
     completed_at: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     last_read_at: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="chapter_progresses")
+    chapter: Mapped["Chapter"] = relationship(back_populates="progresses")
