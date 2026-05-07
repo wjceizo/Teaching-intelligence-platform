@@ -7,9 +7,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const loginMutation = useLogin();
 
-  const [email, setEmail] = useState("student@example.com");
-  const [password, setPassword] = useState("Password123");
-  const [rememberMe, setRememberMe] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -42,6 +41,7 @@ export function LoginPage() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              autoComplete="off"
               className="w-full rounded-md border border-border bg-background px-3 py-2"
             />
           </div>
@@ -55,25 +55,17 @@ export function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              autoComplete="new-password"
               className="w-full rounded-md border border-border bg-background px-3 py-2"
             />
           </div>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(event) => setRememberMe(event.target.checked)}
-            />
-            记住我
-          </label>
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
           <button
             type="submit"
             disabled={loginMutation.isPending}
-            className="w-full rounded-md bg-primary px-4 py-2 text-white disabled:opacity-50"
+            className="w-full rounded-md border border-black bg-transparent px-4 py-2 font-medium text-black disabled:opacity-50"
           >
             {loginMutation.isPending ? "登录中..." : "登录"}
           </button>

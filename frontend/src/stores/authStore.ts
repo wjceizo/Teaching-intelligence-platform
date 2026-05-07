@@ -1,5 +1,7 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
+import { useUIStore } from "./uiStore";
 
 export interface AuthUser {
   id: string;
@@ -42,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => {
         set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        useUIStore.getState().setTheme("light");
         if (typeof window !== "undefined" && window.location.pathname !== "/login") {
           window.location.replace("/login");
         }

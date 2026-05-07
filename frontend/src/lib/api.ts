@@ -109,13 +109,36 @@ export function useLogin() {
       formData.set("username", input.email);
       formData.set("password", input.password);
 
-      const tokens = await apiFetch<AuthTokens>("/v1/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/v1/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: formData.toString(),
       });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new ApiError("密码错误或者该用户不存在", 401);
+        }
+
+        let errorMessage = "登录失败，请稍后再试。";
+        try {
+          const body: unknown = await response.json();
+          if (typeof body === "object" && body !== null && "detail" in body) {
+            const detail = (body as { detail: unknown }).detail;
+            if (typeof detail === "string") {
+              errorMessage = detail;
+            }
+          }
+        } catch {
+          errorMessage = response.statusText || errorMessage;
+        }
+
+        throw new ApiError(errorMessage, response.status);
+      }
+
+      const tokens = (await response.json()) as AuthTokens;
 
       useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
 

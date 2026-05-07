@@ -1,7 +1,8 @@
-﻿import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-import { useUIStore } from "../../stores/uiStore";
 import { cn } from "../../lib/utils";
+import { useAuthStore } from "../../stores/authStore";
+import { useUIStore } from "../../stores/uiStore";
 
 interface NavItem {
   label: string;
@@ -19,6 +20,8 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);
+  const token = useAuthStore((state) => state.token);
+  const logout = useAuthStore((state) => state.logout);
 
   return (
     <aside
@@ -32,6 +35,13 @@ export function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={(event) => {
+              if (!token) {
+                event.preventDefault();
+                window.alert("用户信息已经过期，请重新登录。");
+                logout();
+              }
+            }}
             className={({ isActive }) =>
               cn(
                 "rounded-md px-3 py-2 text-sm font-medium",

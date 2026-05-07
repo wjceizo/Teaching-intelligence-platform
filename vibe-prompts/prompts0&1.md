@@ -261,8 +261,61 @@ frontend/
    - 运行命令
    - 关键验证截图/日志要点
    - 发现的问题与修复建议（若无则明确写“无阻塞问题”）
-```
 
+### Prompt 1-4 · 数据库基础模型
+
+
+基于已有的 FastAPI 项目，请创建所有 SQLAlchemy 2.0 ORM 模型。
+
+【要求】
+使用 SQLAlchemy 2.0 的 Mapped + mapped_column 语法（不要用旧的 Column 语法）。
+所有模型继承 app.database.Base。
+主键使用 UUID（String(36)，默认 uuid.uuid4()）。
+时间戳字段统一用 TIMESTAMPTZ（server_default=func.now()）。
+
+【需要创建的模型文件】
+
+app/models/user.py
+- User: id, username, email, password_hash, role(student/teacher/admin), avatar_url,
+  created_at, updated_at
+
+app/models/course.py
+- Course: id, title, description, teacher_id(FK→User), cover_image, status(draft/published),
+  created_at, updated_at
+- Chapter: id, course_id(FK→Course, cascade delete), title, content(Text), order_index,
+  created_at, updated_at
+- Enrollment: id, user_id(FK→User), course_id(FK→Course), enrolled_at
+- ChapterProgress: id, user_id, chapter_id, completed_at, last_read_at
+
+app/models/question.py
+- Question: id, user_id, course_id, chapter_id(nullable), title, content, type(ai/teacher),
+  status(open/resolved), is_pinned, paragraph_ref(nullable,存储段落ID), created_at
+- Answer: id, question_id(cascade delete), user_id(nullable,AI回答时为null),
+  content, is_teacher, is_ai, upvotes, downvotes, created_at
+
+app/models/note.py
+- Note: id, user_id, course_id, chapter_id(nullable), title(nullable), content,
+  tags(ARRAY(String)), is_public, source_paragraph_ref(nullable), created_at, updated_at
+
+app/models/exam.py
+- Question bank: ExamQuestion: id, course_id, type(single/multi/fill/short/proof),
+  content, options(JSON nullable), answer, explanation, difficulty(1-5), created_at
+- Exam: id, course_id, title, description, total_score, time_limit(minutes),
+  start_time, end_time, is_shuffled, status(draft/published/closed), created_at
+- ExamAttempt: id, exam_id, user_id, answers(JSON), score(nullable), status(in_progress/submitted),
+  started_at, submitted_at
+
+app/models/codelab.py
+- CodeLab: id, course_id, title, description, language, starter_code, test_script,
+  difficulty(1-5), created_at
+- CodeSubmission: id, codelab_id, user_id, code, status(pending/running/success/failed/error),
+  logs, tests_passed, tests_total, execution_time_ms, submitted_at
+
+创建完所有模型后，在 app/models/__init__.py 中统一导入，
+并在 alembic/env.py 中引入 Base.metadata 以支持 autogenerate。
+最后生成第一个 Alembic 迁移：alembic revision --autogenerate -m "initial schema"
+并给出 alembic upgrade head 命令。
+```
 ---
 
-以上 Prompt 可直接按 `Phase 0 -> Phase 1-1 -> Phase 1-2 -> Phase 1-3` 顺序执行。
+以上 Prompt 可直接按 `Phase 0 -> Phase 1-1 -> Phase 1-2 -> Phase 1-3 -> Phase 1-4` 顺序执行。
