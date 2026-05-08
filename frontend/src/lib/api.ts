@@ -23,6 +23,57 @@ function buildHeaders(headers?: HeadersInit): Headers {
   return mergedHeaders;
 }
 
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = useAuthStore.getState().refreshToken;
+  if (!refreshToken) {
+    return null;
+  }
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const response = await fetch(`${API_BASE_URL}/v1/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const tokens = (await response.json()) as AuthTokens;
+      useAuthStore.getState().setTokens(tokens.access_token, tokens.refresh_token);
+      return tokens.access_token;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
+async function readApiError(response: Response): Promise<ApiError> {
+  let errorMessage = "请求失败";
+
+  try {
+    const body: unknown = await response.json();
+    if (typeof body === "object" && body !== null && "detail" in body) {
+      const detail = (body as { detail: unknown }).detail;
+      if (typeof detail === "string") {
+        errorMessage = detail;
+      }
+    }
+  } catch {
+    errorMessage = response.statusText || errorMessage;
+  }
+
+  return new ApiError(errorMessage, response.status);
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -30,26 +81,36 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
 
   if (response.status === 401) {
+    if (path !== "/v1/auth/refresh") {
+      const refreshedAccessToken = await refreshAccessToken();
+      if (refreshedAccessToken) {
+        const retryHeaders = new Headers(init?.headers);
+        retryHeaders.set("Authorization", `Bearer ${refreshedAccessToken}`);
+
+        const retryResponse = await fetch(`${API_BASE_URL}${path}`, {
+          ...init,
+          headers: retryHeaders,
+        });
+
+        if (retryResponse.ok) {
+          if (retryResponse.status === 204) {
+            return undefined as T;
+          }
+          return (await retryResponse.json()) as T;
+        }
+
+        if (retryResponse.status !== 401) {
+          throw await readApiError(retryResponse);
+        }
+      }
+    }
+
     useAuthStore.getState().logout();
     throw new ApiError("用户信息已经过期，请重新登录。", 401);
   }
 
   if (!response.ok) {
-    let errorMessage = "请求失败";
-
-    try {
-      const body: unknown = await response.json();
-      if (typeof body === "object" && body !== null && "detail" in body) {
-        const detail = (body as { detail: unknown }).detail;
-        if (typeof detail === "string") {
-          errorMessage = detail;
-        }
-      }
-    } catch {
-      errorMessage = response.statusText || errorMessage;
-    }
-
-    throw new ApiError(errorMessage, response.status);
+    throw await readApiError(response);
   }
 
   if (response.status === 204) {
@@ -188,7 +249,7 @@ export function useLogin() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new ApiError("密码错误或者该用户不存在", 401);
+          throw new ApiError("密码错误或用户不存在。", 401);
         }
 
         let errorMessage = "登录失败，请稍后再试。";

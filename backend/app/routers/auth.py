@@ -40,8 +40,8 @@ async def login_user(
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(data: RefreshTokenRequest) -> TokenResponse:
-    access_token = AuthService.refresh_access_token(data.refresh_token)
+async def refresh_token(data: RefreshTokenRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
+    access_token = await AuthService.refresh_access_token(db=db, refresh_token=data.refresh_token)
     return TokenResponse(access_token=access_token, refresh_token=data.refresh_token, token_type="bearer")
 
 

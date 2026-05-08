@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppLayout } from "./components/layout/AppLayout";
-import { useMe } from "./lib/api";
+import { ApiError, useMe } from "./lib/api";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { CourseEditorPage } from "./pages/CourseEditorPage";
 import { CourseListPage } from "./pages/CourseListPage";
@@ -31,6 +31,7 @@ function AuthBootstrap() {
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
   const logout = useAuthStore((state) => state.logout);
+  const location = useLocation();
   const meQuery = useMe(hasHydrated && Boolean(token));
 
   useEffect(() => {
@@ -45,10 +46,40 @@ function AuthBootstrap() {
   }, [meQuery.data, setUser]);
 
   useEffect(() => {
-    if (hasHydrated && token && meQuery.isError) {
+    const shouldLogout =
+      meQuery.error instanceof ApiError &&
+      meQuery.error.status === 401 &&
+      hasHydrated &&
+      Boolean(token);
+
+    if (shouldLogout) {
       logout();
     }
-  }, [hasHydrated, token, meQuery.isError, logout]);
+  }, [hasHydrated, token, meQuery.error, logout]);
+
+  useEffect(() => {
+    if (!hasHydrated || !token || typeof window === "undefined") {
+      return;
+    }
+
+    const rawAuthStorage = window.localStorage.getItem("auth-storage");
+    if (!rawAuthStorage) {
+      logout();
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(rawAuthStorage) as {
+        state?: { token?: string | null };
+      };
+      const persistedToken = parsed.state?.token ?? null;
+      if (!persistedToken) {
+        logout();
+      }
+    } catch {
+      logout();
+    }
+  }, [hasHydrated, token, location.key, logout]);
 
   return null;
 }

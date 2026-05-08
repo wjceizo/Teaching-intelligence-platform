@@ -38,10 +38,11 @@ class AuthService:
         return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
     @staticmethod
-    def create_refresh_token(user_id: str) -> str:
+    def create_refresh_token(user_id: str, role: str) -> str:
         expire = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
         payload = {
             "sub": user_id,
+            "role": role,
             "type": "refresh",
             "exp": expire,
             "iat": datetime.now(UTC),
@@ -75,11 +76,11 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
         access_token = cls.create_access_token(user.id, user.role)
-        refresh_token = cls.create_refresh_token(user.id)
+        refresh_token = cls.create_refresh_token(user.id, user.role)
         return user, access_token, refresh_token
 
     @classmethod
-    def refresh_access_token(cls, refresh_token: str) -> str:
+    async def refresh_access_token(cls, db: AsyncSession, refresh_token: str) -> str:
         try:
             payload = jwt.decode(refresh_token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         except JWTError as exc:
@@ -91,11 +92,12 @@ class AuthService:
         if token_type != "refresh" or not isinstance(user_id, str) or not user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-        role = payload.get("role")
-        if not isinstance(role, str) or not role:
-            role = "student"
+        query = await db.execute(select(User).where(User.id == user_id))
+        user = query.scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-        return cls.create_access_token(user_id=user_id, role=role)
+        return cls.create_access_token(user_id=user_id, role=user.role)
 
     @classmethod
     async def change_password(
