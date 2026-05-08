@@ -6,16 +6,23 @@ interface AskQuestionDialogProps {
   open: boolean;
   initialCourseId?: string;
   initialChapterId?: string;
-  initialParagraphRef?: string;
+  initialQuotedParagraph?: string;
   onClose: () => void;
   onCreated?: (questionId: string) => void;
+}
+
+function buildInitialContent(quotedParagraph?: string): string {
+  if (!quotedParagraph?.trim()) {
+    return "";
+  }
+  return `> 引用段落\n> ${quotedParagraph.trim().replace(/\n/g, "\n> ")}\n\n我的问题：\n`;
 }
 
 export function AskQuestionDialog({
   open,
   initialCourseId,
   initialChapterId,
-  initialParagraphRef,
+  initialQuotedParagraph,
   onClose,
   onCreated,
 }: AskQuestionDialogProps) {
@@ -27,7 +34,6 @@ export function AskQuestionDialog({
   const [courseId, setCourseId] = useState(initialCourseId ?? "");
   const [chapterId, setChapterId] = useState(initialChapterId ?? "");
   const [type, setType] = useState<"ai" | "teacher">("teacher");
-  const [paragraphRef, setParagraphRef] = useState(initialParagraphRef ?? "");
 
   const selectedCourseId = courseId || undefined;
   const courseDetailQuery = useCourse(selectedCourseId);
@@ -39,8 +45,8 @@ export function AskQuestionDialog({
     }
     setCourseId(initialCourseId ?? "");
     setChapterId(initialChapterId ?? "");
-    setParagraphRef(initialParagraphRef ?? "");
-  }, [open, initialCourseId, initialChapterId, initialParagraphRef]);
+    setContent(buildInitialContent(initialQuotedParagraph));
+  }, [open, initialCourseId, initialChapterId, initialQuotedParagraph]);
 
   const canSubmit = useMemo(() => {
     return Boolean(title.trim() && content.trim() && courseId);
@@ -58,12 +64,10 @@ export function AskQuestionDialog({
       course_id: courseId,
       chapter_id: chapterId || undefined,
       type,
-      paragraph_ref: paragraphRef || undefined,
     });
 
     setTitle("");
     setContent("");
-    setParagraphRef("");
     onClose();
     onCreated?.(question.id);
   };
@@ -73,11 +77,11 @@ export function AskQuestionDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 p-4">
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-background p-5 shadow-xl">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/45 p-4">
+      <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">发起提问</h2>
-          <button type="button" onClick={onClose} className="rounded border border-border px-2 py-1 text-sm">
+          <button type="button" onClick={onClose} className="rounded border border-slate-300 px-2 py-1 text-sm">
             关闭
           </button>
         </div>
@@ -87,14 +91,14 @@ export function AskQuestionDialog({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="问题标题"
-            className="w-full rounded-md border border-border bg-background px-3 py-2"
+            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2"
           />
 
           <textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
             placeholder="问题内容（支持 Markdown / LaTeX）"
-            className="min-h-36 w-full rounded-md border border-border bg-background px-3 py-2"
+            className="min-h-36 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
           />
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -104,7 +108,7 @@ export function AskQuestionDialog({
                 setCourseId(event.target.value);
                 setChapterId("");
               }}
-              className="rounded-md border border-border bg-background px-3 py-2"
+              className="rounded-md border border-slate-300 bg-white px-3 py-2"
             >
               <option value="">选择课程</option>
               {(coursesQuery.data?.data ?? []).map((course) => (
@@ -117,7 +121,7 @@ export function AskQuestionDialog({
             <select
               value={chapterId}
               onChange={(event) => setChapterId(event.target.value)}
-              className="rounded-md border border-border bg-background px-3 py-2"
+              className="rounded-md border border-slate-300 bg-white px-3 py-2"
               disabled={!courseId}
             >
               <option value="">选择章节（可选）</option>
@@ -133,21 +137,15 @@ export function AskQuestionDialog({
             <select
               value={type}
               onChange={(event) => setType(event.target.value as "ai" | "teacher")}
-              className="rounded-md border border-border bg-background px-3 py-2"
+              className="rounded-md border border-slate-300 bg-white px-3 py-2"
             >
               <option value="ai">AI答疑</option>
               <option value="teacher">教师答疑</option>
             </select>
-            <input
-              value={paragraphRef}
-              onChange={(event) => setParagraphRef(event.target.value)}
-              placeholder="段落引用（可选）"
-              className="rounded-md border border-border bg-background px-3 py-2"
-            />
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded border border-border px-3 py-2 text-sm">
+            <button type="button" onClick={onClose} className="rounded border border-slate-300 px-3 py-2 text-sm">
               取消
             </button>
             <button

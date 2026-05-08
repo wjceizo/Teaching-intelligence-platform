@@ -25,6 +25,7 @@ from app.schemas.question import (
     QuestionCreate,
     QuestionFilter,
     QuestionResponse,
+    QuestionUpdate,
     QuestionUserSummary,
 )
 from app.services.question_service import QuestionService
@@ -73,6 +74,8 @@ def _build_question_response(question: Question, answers_count: int) -> Question
         is_pinned=question.is_pinned,
         view_count=question.view_count,
         paragraph_ref=question.paragraph_ref,
+        course_title=question.course.title if question.course is not None else None,
+        chapter_title=question.chapter.title if question.chapter is not None else None,
         created_at=question.created_at,
         user=QuestionUserSummary.model_validate(question.user),
         answers_count=answers_count,
@@ -155,6 +158,20 @@ async def create_question(
 ) -> QuestionResponse:
     question = await QuestionService.create_question(db=db, user_id=current_user.id, data=data)
     return _build_question_response(question, answers_count=0)
+
+
+@router.put("/{question_id}", response_model=QuestionResponse)
+async def update_question(
+    question_id: str,
+    data: QuestionUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> QuestionResponse:
+    question = await QuestionService.update_question(db=db, question_id=question_id, user=current_user, data=data)
+    answers_count = int(
+        await db.scalar(select(func.count(Answer.id)).where(Answer.question_id == question.id)) or 0
+    )
+    return _build_question_response(question, answers_count=answers_count)
 
 
 @router.get("/{question_id}", response_model=QuestionDetailResponse)

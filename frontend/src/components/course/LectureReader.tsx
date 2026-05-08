@@ -10,6 +10,7 @@ interface LectureReaderProps {
   onMarkCompleted: () => void;
   onNavigateChapter: (chapterId: string) => void;
   onAskQuestion?: () => void;
+  onAskParagraph?: (paragraphText: string) => void;
 }
 
 export function LectureReader({
@@ -21,6 +22,7 @@ export function LectureReader({
   onMarkCompleted,
   onNavigateChapter,
   onAskQuestion,
+  onAskParagraph,
 }: LectureReaderProps) {
   if (!chapter) {
     return <div className="rounded-xl border border-border bg-background p-4">请选择章节开始学习。</div>;
@@ -45,7 +47,7 @@ export function LectureReader({
       </div>
 
       <h2 className="mb-4 text-2xl font-semibold">{chapter.title}</h2>
-      <MarkdownRenderer content={chapter.content} />
+      <MarkdownRenderer content={chapter.content} enableParagraphAsk onAskParagraph={onAskParagraph} />
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
         <div className="flex items-center gap-2">

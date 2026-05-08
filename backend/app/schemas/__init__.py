@@ -20,6 +20,7 @@ from app.schemas.question import (
     QuestionDetailResponse,
     QuestionFilter,
     QuestionResponse,
+    QuestionUpdate,
 )
 from app.schemas.user import (
     PasswordChange,
@@ -50,6 +51,7 @@ __all__ = [
     "ProgressUpdate",
     "PaginatedCourseResponse",
     "QuestionCreate",
+    "QuestionUpdate",
     "AnswerCreate",
     "AnswerUpdate",
     "AnswerVoteRequest",

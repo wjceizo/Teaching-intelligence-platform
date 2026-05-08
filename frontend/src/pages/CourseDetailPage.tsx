@@ -120,6 +120,17 @@ export function CourseDetailPage() {
                 state: {
                   courseId: id,
                   chapterId: normalizedCurrentChapterId,
+                  openAsk: true,
+                },
+              })
+            }
+            onAskParagraph={(paragraphText) =>
+              navigate("/qa", {
+                state: {
+                  courseId: id,
+                  chapterId: normalizedCurrentChapterId,
+                  quotedParagraph: paragraphText,
+                  openAsk: true,
                 },
               })
             }

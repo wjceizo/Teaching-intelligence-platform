@@ -15,6 +15,15 @@ class QuestionCreate(BaseModel):
     paragraph_ref: str | None = Field(default=None, max_length=128)
 
 
+class QuestionUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    content: str | None = Field(default=None, min_length=1)
+    course_id: str | None = None
+    chapter_id: str | None = None
+    type: Literal["ai", "teacher"] | None = None
+    paragraph_ref: str | None = Field(default=None, max_length=128)
+
+
 class AnswerCreate(BaseModel):
     content: str = Field(min_length=1)
 
@@ -81,6 +90,8 @@ class QuestionResponse(BaseModel):
     is_pinned: bool
     view_count: int
     paragraph_ref: str | None
+    course_title: str | None = None
+    chapter_title: str | None = None
     created_at: datetime
     user: QuestionUserSummary
     answers_count: int = 0

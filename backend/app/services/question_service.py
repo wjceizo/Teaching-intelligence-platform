@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.models.course import Chapter, Course
 from app.models.question import Answer, AnswerVote, Question
 from app.models.user import User
-from app.schemas.question import AnswerCreate, AnswerUpdate, QuestionCreate, QuestionFilter
+from app.schemas.question import AnswerCreate, AnswerUpdate, QuestionCreate, QuestionFilter, QuestionUpdate
 
 
 @dataclass
@@ -37,7 +37,13 @@ class QuestionService:
     @staticmethod
     async def _get_question_with_user(db: AsyncSession, question_id: str) -> Question:
         result = await db.execute(
-            select(Question).where(Question.id == question_id).options(selectinload(Question.user))
+            select(Question)
+            .where(Question.id == question_id)
+            .options(
+                selectinload(Question.user),
+                selectinload(Question.course),
+                selectinload(Question.chapter),
+            )
         )
         question = result.scalar_one_or_none()
         if question is None:
@@ -86,6 +92,13 @@ class QuestionService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chapter does not belong to course")
 
     @staticmethod
+    async def _get_question_or_404(db: AsyncSession, question_id: str) -> Question:
+        question = await db.get(Question, question_id)
+        if question is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
+        return question
+
+    @staticmethod
     async def list_questions(
         db: AsyncSession,
         user_id: str,
@@ -128,7 +141,11 @@ class QuestionService:
 
         query: Select[tuple[Question, int]] = (
             select(Question, answers_count_column.label("answers_count"))
-            .options(selectinload(Question.user))
+            .options(
+                selectinload(Question.user),
+                selectinload(Question.course),
+                selectinload(Question.chapter),
+            )
             .outerjoin(answers_stats_subquery, Question.id == answers_stats_subquery.c.question_id)
         )
         if conditions:
@@ -157,7 +174,11 @@ class QuestionService:
         question_query = await db.execute(
             select(Question)
             .where(Question.id == question_id)
-            .options(selectinload(Question.user))
+            .options(
+                selectinload(Question.user),
+                selectinload(Question.course),
+                selectinload(Question.chapter),
+            )
         )
         question = question_query.scalar_one_or_none()
         if question is None:
@@ -215,6 +236,32 @@ class QuestionService:
             view_count=0,
         )
         db.add(question)
+        await db.commit()
+        return await cls._get_question_with_user(db=db, question_id=question.id)
+
+    @classmethod
+    async def update_question(cls, db: AsyncSession, question_id: str, user: User, data: QuestionUpdate) -> Question:
+        question = await cls._get_question_or_404(db=db, question_id=question_id)
+        if question.user_id != user.id and user.role != "admin":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+
+        payload = data.model_dump(exclude_unset=True)
+        next_course_id = payload.get("course_id", question.course_id)
+        next_chapter_id = payload.get("chapter_id", question.chapter_id)
+
+        if "course_id" in payload or "chapter_id" in payload:
+            await cls._validate_course_and_chapter(
+                db=db,
+                course_id=next_course_id,
+                chapter_id=next_chapter_id,
+            )
+
+        for key, value in payload.items():
+            if key == "title" and value is not None:
+                setattr(question, key, value.strip())
+            else:
+                setattr(question, key, value)
+
         await db.commit()
         return await cls._get_question_with_user(db=db, question_id=question.id)
 

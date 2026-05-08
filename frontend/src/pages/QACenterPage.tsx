@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AskQuestionDialog } from "../components/qa/AskQuestionDialog";
@@ -9,7 +9,7 @@ export function QACenterPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as
-    | { courseId?: string; chapterId?: string; paragraphRef?: string }
+    | { courseId?: string; chapterId?: string; quotedParagraph?: string; openAsk?: boolean }
     | undefined;
   const [page, setPage] = useState(1);
   const [showAskDialog, setShowAskDialog] = useState(false);
@@ -31,6 +31,12 @@ export function QACenterPage() {
   }, [courseId, sort, status, tab]);
 
   const questionsQuery = useQuestions(filters, page, pageSize);
+
+  useEffect(() => {
+    if (locationState?.openAsk) {
+      setShowAskDialog(true);
+    }
+  }, [locationState?.openAsk]);
 
   return (
     <section className="space-y-4">
@@ -172,7 +178,7 @@ export function QACenterPage() {
         open={showAskDialog}
         initialCourseId={locationState?.courseId}
         initialChapterId={locationState?.chapterId}
-        initialParagraphRef={locationState?.paragraphRef}
+        initialQuotedParagraph={locationState?.quotedParagraph}
         onClose={() => setShowAskDialog(false)}
         onCreated={(questionId) => navigate(`/qa/${questionId}`)}
       />

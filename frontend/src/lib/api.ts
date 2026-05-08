@@ -470,6 +470,8 @@ export interface Question {
   is_pinned: boolean;
   view_count: number;
   paragraph_ref: string | null;
+  course_title: string | null;
+  chapter_title: string | null;
   created_at: string;
   user: QuestionUserSummary;
   answers_count: number;
@@ -503,6 +505,15 @@ export interface QuestionCreateInput {
   course_id: string;
   chapter_id?: string;
   type: "ai" | "teacher";
+  paragraph_ref?: string;
+}
+
+export interface QuestionUpdateInput {
+  title?: string;
+  content?: string;
+  course_id?: string;
+  chapter_id?: string;
+  type?: "ai" | "teacher";
   paragraph_ref?: string;
 }
 
@@ -563,6 +574,38 @@ export function useCreateQuestion() {
   });
 }
 
+export function useUpdateQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questionId, input }: { questionId: string; input: QuestionUpdateInput }) =>
+      apiFetch<Question>(`/v1/questions/${questionId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (question) => {
+      void queryClient.invalidateQueries({ queryKey: ["question", question.id] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useDeleteQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      apiFetch<void>(`/v1/questions/${questionId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+      void queryClient.invalidateQueries({ queryKey: ["question"] });
+    },
+  });
+}
+
 export function useCreateAnswer() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -576,6 +619,38 @@ export function useCreateAnswer() {
       }),
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["question", variables.questionId] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useUpdateAnswer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ answerId, content }: { answerId: string; content: string }) =>
+      apiFetch<Answer>(`/v1/questions/answers/${answerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["question"] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useDeleteAnswer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (answerId: string) =>
+      apiFetch<void>(`/v1/questions/answers/${answerId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["question"] });
       void queryClient.invalidateQueries({ queryKey: ["questions"] });
     },
   });
