@@ -3,11 +3,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.codelab import CodeLab
 from app.models.course import Chapter, ChapterProgress, Course, Enrollment
+from app.models.exam import Exam, ExamQuestion
+from app.models.note import Note
+from app.models.question import Question
 from app.models.user import User
 from app.schemas.course import ChapterCreate, ChapterReorder, ChapterUpdate, CourseCreate, CourseUpdate
 
@@ -101,8 +106,26 @@ class CourseService:
     async def delete_course(cls, db: AsyncSession, course_id: str, user: User) -> None:
         course = await cls.get_course_with_chapters(db, course_id)
         cls._assert_course_edit_permission(user, course)
-        await db.delete(course)
-        await db.commit()
+        try:
+            # Keep cleanup explicit because some foreign keys in current DB schema do not cascade on delete.
+            await db.execute(update(Note).where(Note.course_id == course_id).values(chapter_id=None))
+            await db.execute(update(Question).where(Question.course_id == course_id).values(chapter_id=None))
+
+            await db.execute(delete(Question).where(Question.course_id == course_id))
+            await db.execute(delete(Note).where(Note.course_id == course_id))
+            await db.execute(delete(Enrollment).where(Enrollment.course_id == course_id))
+            await db.execute(delete(CodeLab).where(CodeLab.course_id == course_id))
+            await db.execute(delete(Exam).where(Exam.course_id == course_id))
+            await db.execute(delete(ExamQuestion).where(ExamQuestion.course_id == course_id))
+            await db.execute(delete(Chapter).where(Chapter.course_id == course_id))
+            await db.delete(course)
+            await db.commit()
+        except IntegrityError as exc:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Course cannot be deleted because related data still exists",
+            ) from exc
 
     @classmethod
     async def create_chapter(
@@ -158,8 +181,18 @@ class CourseService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chapter not found")
 
         cls._assert_course_edit_permission(user, chapter.course)
-        await db.delete(chapter)
-        await db.commit()
+        try:
+            # Preserve historical QA/notes while allowing chapter deletion.
+            await db.execute(update(Note).where(Note.chapter_id == chapter_id).values(chapter_id=None))
+            await db.execute(update(Question).where(Question.chapter_id == chapter_id).values(chapter_id=None))
+            await db.delete(chapter)
+            await db.commit()
+        except IntegrityError as exc:
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Chapter cannot be deleted because related data still exists",
+            ) from exc
 
     @classmethod
     async def reorder_chapters(

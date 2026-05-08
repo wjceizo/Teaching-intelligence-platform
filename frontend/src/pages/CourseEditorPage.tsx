@@ -137,6 +137,8 @@ export function CourseEditorPage() {
   const [isPreview, setIsPreview] = useState(false);
   const [hasPendingChange, setHasPendingChange] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [courseTitleDraft, setCourseTitleDraft] = useState("");
+  const [hasCourseTitlePendingChange, setHasCourseTitlePendingChange] = useState(false);
   const [coverDraft, setCoverDraft] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState("");
 
@@ -150,6 +152,8 @@ export function CourseEditorPage() {
     }
     setChapters(courseQuery.data.chapters);
     setSelectedChapterId((previous) => previous ?? courseQuery.data?.chapters[0]?.id ?? null);
+    setCourseTitleDraft(courseQuery.data.title);
+    setHasCourseTitlePendingChange(false);
     setCoverDraft(courseQuery.data.cover_image);
   }, [courseQuery.data]);
 
@@ -323,6 +327,30 @@ export function CourseEditorPage() {
     });
   };
 
+  const handleSaveCourseTitle = () => {
+    if (!id) {
+      return;
+    }
+
+    const title = courseTitleDraft.trim();
+    if (!title) {
+      window.alert("课程名称不能为空");
+      return;
+    }
+
+    updateCourseMutation.mutate(
+      {
+        id,
+        input: { title },
+      },
+      {
+        onSuccess: () => {
+          setHasCourseTitlePendingChange(false);
+        },
+      }
+    );
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) {
@@ -389,6 +417,27 @@ export function CourseEditorPage() {
           className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
         >
           返回课程详情
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-background p-3">
+        <label className="text-sm text-foreground/70">课程名称</label>
+        <input
+          value={courseTitleDraft}
+          onChange={(event) => {
+            setCourseTitleDraft(event.target.value);
+            setHasCourseTitlePendingChange(true);
+          }}
+          placeholder="输入课程名称"
+          className="min-w-[220px] max-w-xl flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+        />
+        <button
+          type="button"
+          onClick={handleSaveCourseTitle}
+          disabled={!hasCourseTitlePendingChange || updateCourseMutation.isPending}
+          className="rounded-md border border-black bg-transparent px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
+        >
+          保存课程名称
         </button>
       </div>
 
