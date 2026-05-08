@@ -12,7 +12,7 @@ from sqlalchemy import select
 from app.config import get_settings
 from app.database import AsyncSessionLocal
 from app.models.user import User
-from app.routers import auth_router, courses_router
+from app.routers import auth_router, courses_router, questions_router
 from app.services.auth_service import AuthService
 
 settings = get_settings()
@@ -52,6 +52,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(courses_router)
+app.include_router(questions_router)
 
 
 class HealthData(BaseModel):

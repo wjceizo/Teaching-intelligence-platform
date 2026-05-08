@@ -434,3 +434,195 @@ export function useUpdateProgress() {
     },
   });
 }
+
+export interface QuestionUserSummary {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+export interface AnswerUserSummary extends QuestionUserSummary {
+  role: "student" | "teacher" | "admin";
+}
+
+export interface Answer {
+  id: string;
+  question_id: string;
+  content: string;
+  is_teacher: boolean;
+  is_ai: boolean;
+  upvotes: number;
+  downvotes: number;
+  created_at: string;
+  user: AnswerUserSummary | null;
+  user_vote: -1 | 0 | 1;
+}
+
+export interface Question {
+  id: string;
+  user_id: string;
+  course_id: string;
+  chapter_id: string | null;
+  title: string;
+  content: string;
+  type: "ai" | "teacher";
+  status: "open" | "resolved";
+  is_pinned: boolean;
+  view_count: number;
+  paragraph_ref: string | null;
+  created_at: string;
+  user: QuestionUserSummary;
+  answers_count: number;
+}
+
+export interface QuestionDetail extends Question {
+  answers: Answer[];
+  paragraph_excerpt: string | null;
+}
+
+export interface QuestionFilters {
+  course_id?: string;
+  chapter_id?: string;
+  type?: "ai" | "teacher";
+  status?: "open" | "resolved";
+  sort?: "latest" | "hot" | "unanswered";
+}
+
+export interface PaginatedQuestions {
+  data: Question[];
+  meta: {
+    page: number;
+    page_size: number;
+    total: number;
+  };
+}
+
+export interface QuestionCreateInput {
+  title: string;
+  content: string;
+  course_id: string;
+  chapter_id?: string;
+  type: "ai" | "teacher";
+  paragraph_ref?: string;
+}
+
+export interface AnswerCreateInput {
+  content: string;
+}
+
+export function useQuestions(filters: QuestionFilters, page: number, pageSize: number) {
+  return useQuery({
+    queryKey: ["questions", filters, page, pageSize],
+    queryFn: () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pageSize),
+      });
+      if (filters.course_id) {
+        params.set("course_id", filters.course_id);
+      }
+      if (filters.chapter_id) {
+        params.set("chapter_id", filters.chapter_id);
+      }
+      if (filters.type) {
+        params.set("type", filters.type);
+      }
+      if (filters.status) {
+        params.set("status", filters.status);
+      }
+      if (filters.sort) {
+        params.set("sort", filters.sort);
+      }
+      return apiFetch<PaginatedQuestions>(`/v1/questions?${params.toString()}`);
+    },
+  });
+}
+
+export function useQuestion(id?: string) {
+  return useQuery({
+    queryKey: ["question", id],
+    queryFn: () => apiFetch<QuestionDetail>(`/v1/questions/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: QuestionCreateInput) =>
+      apiFetch<Question>("/v1/questions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useCreateAnswer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questionId, input }: { questionId: string; input: AnswerCreateInput }) =>
+      apiFetch<Answer>(`/v1/questions/${questionId}/answers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["question", variables.questionId] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useVoteAnswer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ answerId, vote }: { answerId: string; vote: -1 | 0 | 1 }) =>
+      apiFetch<Answer>(`/v1/questions/answers/${answerId}/vote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vote }),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["question"] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useResolveQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      apiFetch<Question>(`/v1/questions/${questionId}/resolve`, {
+        method: "POST",
+      }),
+    onSuccess: (question) => {
+      void queryClient.invalidateQueries({ queryKey: ["question", question.id] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}
+
+export function useTogglePinQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      apiFetch<Question>(`/v1/questions/${questionId}/pin`, {
+        method: "POST",
+      }),
+    onSuccess: (question) => {
+      void queryClient.invalidateQueries({ queryKey: ["question", question.id] });
+      void queryClient.invalidateQueries({ queryKey: ["questions"] });
+    },
+  });
+}

@@ -23,3 +23,6 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     courses_taught: Mapped[list["Course"]] = relationship(back_populates="teacher")
     enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="user")
     chapter_progresses: Mapped[list["ChapterProgress"]] = relationship(back_populates="user")
+    questions: Mapped[list["Question"]] = relationship(back_populates="user")
+    answers: Mapped[list["Answer"]] = relationship(back_populates="user")
+    answer_votes: Mapped[list["AnswerVote"]] = relationship(back_populates="user")

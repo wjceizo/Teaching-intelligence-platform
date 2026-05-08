@@ -9,6 +9,7 @@ interface LectureReaderProps {
   canMarkCompleted: boolean;
   onMarkCompleted: () => void;
   onNavigateChapter: (chapterId: string) => void;
+  onAskQuestion?: () => void;
 }
 
 export function LectureReader({
@@ -19,6 +20,7 @@ export function LectureReader({
   canMarkCompleted,
   onMarkCompleted,
   onNavigateChapter,
+  onAskQuestion,
 }: LectureReaderProps) {
   if (!chapter) {
     return <div className="rounded-xl border border-border bg-background p-4">请选择章节开始学习。</div>;
@@ -32,14 +34,12 @@ export function LectureReader({
       <div className="absolute right-4 top-4 flex flex-col gap-2">
         <button
           type="button"
+          onClick={onAskQuestion}
           className="rounded-md border border-border bg-background px-3 py-1 text-xs hover:bg-muted"
         >
           提问
         </button>
-        <button
-          type="button"
-          className="rounded-md border border-border bg-background px-3 py-1 text-xs hover:bg-muted"
-        >
+        <button type="button" className="rounded-md border border-border bg-background px-3 py-1 text-xs hover:bg-muted">
           添加笔记
         </button>
       </div>

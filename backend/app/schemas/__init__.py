@@ -10,6 +10,17 @@ from app.schemas.course import (
     PaginatedCourseResponse,
     ProgressUpdate,
 )
+from app.schemas.question import (
+    AnswerCreate,
+    AnswerResponse,
+    AnswerUpdate,
+    AnswerVoteRequest,
+    PaginatedQuestionResponse,
+    QuestionCreate,
+    QuestionDetailResponse,
+    QuestionFilter,
+    QuestionResponse,
+)
 from app.schemas.user import (
     PasswordChange,
     RefreshTokenRequest,
@@ -38,4 +49,13 @@ __all__ = [
     "ChapterDetailResponse",
     "ProgressUpdate",
     "PaginatedCourseResponse",
+    "QuestionCreate",
+    "AnswerCreate",
+    "AnswerUpdate",
+    "AnswerVoteRequest",
+    "QuestionFilter",
+    "QuestionResponse",
+    "QuestionDetailResponse",
+    "AnswerResponse",
+    "PaginatedQuestionResponse",
 ]

@@ -115,6 +115,14 @@ export function CourseDetailPage() {
               }
               updateProgressMutation.mutate({ chapterId: normalizedCurrentChapterId, completed: true });
             }}
+            onAskQuestion={() =>
+              navigate("/qa", {
+                state: {
+                  courseId: id,
+                  chapterId: normalizedCurrentChapterId,
+                },
+              })
+            }
           />
         </div>
       </div>

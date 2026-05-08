@@ -8,6 +8,8 @@ import { CourseEditorPage } from "./pages/CourseEditorPage";
 import { CourseListPage } from "./pages/CourseListPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { QACenterPage } from "./pages/QACenterPage";
+import { QuestionDetailPage } from "./pages/QuestionDetailPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { useAuthStore } from "./stores/authStore";
 
@@ -111,13 +113,14 @@ export default function App() {
             <Route path="/courses" element={<CourseListPage />} />
             <Route path="/courses/:id" element={<CourseDetailPage />} />
             <Route path="/courses/:id/chapters/:chapterId" element={<CourseDetailPage />} />
+            <Route path="/qa" element={<QACenterPage />} />
+            <Route path="/qa/:id" element={<QuestionDetailPage />} />
 
             <Route element={<RoleRoute allowedRoles={["teacher", "admin"]} />}>
               <Route path="/courses/:id/edit" element={<CourseEditorPage />} />
               <Route path="/qa/manage" element={<PlaceholderPage title="教师答疑管理" />} />
             </Route>
 
-            <Route path="/qa" element={<PlaceholderPage title="问答" />} />
             <Route path="/notes" element={<PlaceholderPage title="笔记" />} />
             <Route path="/codelab" element={<PlaceholderPage title="实训" />} />
             <Route path="/exam" element={<PlaceholderPage title="测验" />} />
