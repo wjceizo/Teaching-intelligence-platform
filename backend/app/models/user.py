@@ -26,3 +26,4 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     questions: Mapped[list["Question"]] = relationship(back_populates="user")
     answers: Mapped[list["Answer"]] = relationship(back_populates="user")
     answer_votes: Mapped[list["AnswerVote"]] = relationship(back_populates="user")
+    notes: Mapped[list["Note"]] = relationship(back_populates="user")

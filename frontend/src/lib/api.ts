@@ -762,3 +762,194 @@ export function useTogglePinQuestion() {
     },
   });
 }
+
+export interface NoteUserSummary {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+export interface Note {
+  id: string;
+  user_id: string;
+  course_id: string | null;
+  chapter_id: string | null;
+  title: string | null;
+  content: string;
+  tags: string[];
+  is_public: boolean;
+  source_paragraph_ref: string | null;
+  created_at: string;
+  updated_at: string;
+  user: NoteUserSummary;
+  course_title: string | null;
+  chapter_title: string | null;
+}
+
+export interface NoteFilters {
+  course_id?: string;
+  chapter_id?: string;
+  is_public?: boolean;
+  tags?: string[];
+  q?: string;
+}
+
+export interface PaginatedNotes {
+  data: Note[];
+  meta: {
+    page: number;
+    page_size: number;
+    total: number;
+  };
+}
+
+export interface NoteCreateInput {
+  title?: string;
+  content: string;
+  course_id?: string;
+  chapter_id?: string;
+  tags?: string[];
+  is_public?: boolean;
+  source_paragraph_ref?: string;
+}
+
+export interface NoteUpdateInput {
+  title?: string | null;
+  content?: string;
+  course_id?: string | null;
+  chapter_id?: string | null;
+  tags?: string[];
+  is_public?: boolean;
+  source_paragraph_ref?: string | null;
+}
+
+export interface NoteShareInput {
+  expires_in_hours?: 1 | 24 | 168;
+}
+
+export interface NoteShareResponse {
+  token: string;
+  share_url: string;
+  expires_at: string | null;
+}
+
+function buildNoteParams(filters: NoteFilters, page: number, pageSize: number): string {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  if (filters.course_id) {
+    params.set("course_id", filters.course_id);
+  }
+  if (filters.chapter_id) {
+    params.set("chapter_id", filters.chapter_id);
+  }
+  if (typeof filters.is_public === "boolean") {
+    params.set("is_public", String(filters.is_public));
+  }
+  if (filters.tags?.length) {
+    params.set("tags", filters.tags.join(","));
+  }
+  if (filters.q?.trim()) {
+    params.set("q", filters.q.trim());
+  }
+  return params.toString();
+}
+
+export function useNotes(filters: NoteFilters, page: number, pageSize = 20) {
+  return useQuery({
+    queryKey: ["notes", filters, page, pageSize],
+    queryFn: () => apiFetch<PaginatedNotes>(`/v1/notes?${buildNoteParams(filters, page, pageSize)}`),
+  });
+}
+
+export function useNote(id?: string) {
+  return useQuery({
+    queryKey: ["notes", id],
+    queryFn: () => apiFetch<Note>(`/v1/notes/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: NoteCreateInput) =>
+      apiFetch<Note>("/v1/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (note) => {
+      void queryClient.invalidateQueries({ queryKey: ["notes"] });
+      if (note.chapter_id) {
+        void queryClient.invalidateQueries({ queryKey: ["notes", "chapter", note.chapter_id, "public"] });
+      }
+    },
+  });
+}
+
+export function useUpdateNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ noteId, input }: { noteId: string; input: NoteUpdateInput }) =>
+      apiFetch<Note>(`/v1/notes/${noteId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (note) => {
+      void queryClient.invalidateQueries({ queryKey: ["notes"] });
+      void queryClient.invalidateQueries({ queryKey: ["notes", note.id] });
+      if (note.chapter_id) {
+        void queryClient.invalidateQueries({ queryKey: ["notes", "chapter", note.chapter_id, "public"] });
+      }
+    },
+  });
+}
+
+export function useDeleteNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (noteId: string) =>
+      apiFetch<void>(`/v1/notes/${noteId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+}
+
+export function useCreateNoteShare() {
+  return useMutation({
+    mutationFn: ({ noteId, input }: { noteId: string; input: NoteShareInput }) =>
+      apiFetch<NoteShareResponse>(`/v1/notes/${noteId}/share`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+      }),
+  });
+}
+
+export function useSharedNote(token?: string) {
+  return useQuery({
+    queryKey: ["notes", "shared", token],
+    queryFn: () => apiFetch<Note>(`/v1/notes/shared/${token}`),
+    enabled: Boolean(token),
+  });
+}
+
+export function useChapterPublicNotes(chapterId?: string) {
+  return useQuery({
+    queryKey: ["notes", "chapter", chapterId, "public"],
+    queryFn: () => apiFetch<Note[]>(`/v1/notes/chapter/${chapterId}/public`),
+    enabled: Boolean(chapterId),
+  });
+}

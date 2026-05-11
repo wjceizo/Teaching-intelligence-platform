@@ -8,9 +8,11 @@ import { CourseEditorPage } from "./pages/CourseEditorPage";
 import { CourseListPage } from "./pages/CourseListPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { NotesPage } from "./pages/NotesPage";
 import { QACenterPage } from "./pages/QACenterPage";
 import { QuestionDetailPage } from "./pages/QuestionDetailPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { SharedNotePage } from "./pages/SharedNotePage";
 import { useAuthStore } from "./stores/authStore";
 
 interface PlaceholderPageProps {
@@ -152,7 +154,8 @@ export default function App() {
               <Route path="/qa/manage" element={<PlaceholderPage title="教师答疑管理" />} />
             </Route>
 
-            <Route path="/notes" element={<PlaceholderPage title="笔记" />} />
+            <Route path="/notes" element={<NotesPage />} />
+            <Route path="/notes/shared/:token" element={<SharedNotePage />} />
             <Route path="/codelab" element={<PlaceholderPage title="实训" />} />
             <Route path="/exam" element={<PlaceholderPage title="测验" />} />
             <Route path="/forbidden" element={<PlaceholderPage title="无权限访问该页面" />} />

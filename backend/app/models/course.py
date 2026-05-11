@@ -30,6 +30,7 @@ class Course(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     enrollments: Mapped[list["Enrollment"]] = relationship(back_populates="course")
     questions: Mapped[list["Question"]] = relationship(back_populates="course")
+    notes: Mapped[list["Note"]] = relationship(back_populates="course")
 
 
 class Chapter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -47,6 +48,7 @@ class Chapter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     course: Mapped["Course"] = relationship(back_populates="chapters")
     progresses: Mapped[list["ChapterProgress"]] = relationship(back_populates="chapter")
     questions: Mapped[list["Question"]] = relationship(back_populates="chapter")
+    notes: Mapped[list["Note"]] = relationship(back_populates="chapter")
 
 
 class Enrollment(UUIDPrimaryKeyMixin, Base):
