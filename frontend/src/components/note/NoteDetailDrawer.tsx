@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { MarkdownRenderer } from "../course/MarkdownRenderer";
 import { Note, NoteShareInput, useCreateNoteShare } from "../../lib/api";
+import { useAuthStore } from "../../stores/authStore";
 
 interface NoteDetailDrawerProps {
   note: Note | null;
@@ -19,6 +20,7 @@ function formatDate(value: string): string {
 }
 
 export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: NoteDetailDrawerProps) {
+  const user = useAuthStore((state) => state.user);
   const [copyMessage, setCopyMessage] = useState("");
   const [shareUrl, setShareUrl] = useState("");
   const [expiresInHours, setExpiresInHours] = useState<1 | 24 | 168>(24);
@@ -35,6 +37,7 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
   }
 
   const source = [note.course_title, note.chapter_title].filter(Boolean).join(" / ");
+  const canManage = user?.id === note.user_id;
 
   async function handleShare(): Promise<void> {
     if (!note) {
@@ -71,14 +74,16 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onEdit(note)}
-              className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
-            >
-              编辑
-            </button>
-            {!note.is_public ? (
+            {canManage ? (
+              <button
+                type="button"
+                onClick={() => onEdit(note)}
+                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
+              >
+                编辑
+              </button>
+            ) : null}
+            {canManage && !note.is_public ? (
               <select
                 value={expiresInHours}
                 onChange={(event) => setExpiresInHours(Number(event.target.value) as 1 | 24 | 168)}
@@ -89,16 +94,24 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
                 <option value={168}>7天</option>
               </select>
             ) : null}
-            <button type="button" onClick={() => void handleShare()} className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">
-              {createShareMutation.isPending ? "生成中..." : "分享"}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(note)}
-              className="rounded border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
-            >
-              删除
-            </button>
+            {canManage ? (
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
+              >
+                {createShareMutation.isPending ? "生成中..." : "分享"}
+              </button>
+            ) : null}
+            {canManage ? (
+              <button
+                type="button"
+                onClick={() => onDelete(note)}
+                className="rounded border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+              >
+                删除
+              </button>
+            ) : null}
             <span className="rounded-full border border-border px-2 py-1 text-xs text-foreground/65">
               {note.is_public ? "公开" : "私有"}
             </span>

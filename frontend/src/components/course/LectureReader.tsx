@@ -1,6 +1,8 @@
 import { useState, type MouseEvent } from "react";
 
-import { ChapterDetail, ChapterSummary, useChapterPublicNotes } from "../../lib/api";
+import { ChapterDetail, ChapterSummary, Note, useChapterPublicNotes, useDeleteNote } from "../../lib/api";
+import { ChapterPublicNotes } from "../note/ChapterPublicNotes";
+import { NoteDetailDrawer } from "../note/NoteDetailDrawer";
 import { NoteEditorDialog } from "../note/NoteEditorDialog";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
@@ -28,9 +30,13 @@ export function LectureReader({
   onAskParagraph,
 }: LectureReaderProps) {
   const [noteEditorOpen, setNoteEditorOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [initialNoteContent, setInitialNoteContent] = useState("");
+  const [noteError, setNoteError] = useState("");
   const [selectionButton, setSelectionButton] = useState<{ x: number; y: number; text: string } | null>(null);
   const publicNotesQuery = useChapterPublicNotes(chapter?.id);
+  const deleteNoteMutation = useDeleteNote();
 
   if (!chapter) {
     return <div className="rounded-xl border border-border bg-background p-4">请选择章节开始学习。</div>;
@@ -64,9 +70,29 @@ export function LectureReader({
   }
 
   function openNoteEditor(content: string): void {
+    setEditingNote(null);
     setInitialNoteContent(content);
     setNoteEditorOpen(true);
     setSelectionButton(null);
+  }
+
+  function openEditNote(note: Note): void {
+    setEditingNote(note);
+    setInitialNoteContent("");
+    setNoteEditorOpen(true);
+  }
+
+  async function handleDeleteNote(note: Note): Promise<void> {
+    if (!window.confirm("确定删除这条笔记吗？")) {
+      return;
+    }
+    setNoteError("");
+    try {
+      await deleteNoteMutation.mutateAsync(note.id);
+      setSelectedNote(null);
+    } catch (error) {
+      setNoteError(error instanceof Error ? error.message : "删除失败，请稍后再试。");
+    }
   }
 
   return (
@@ -102,24 +128,13 @@ export function LectureReader({
       <h2 className="mb-4 text-2xl font-semibold">{chapter.title}</h2>
       <MarkdownRenderer content={chapter.content} enableParagraphAsk onAskParagraph={onAskParagraph} />
 
-      <section className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
-        <h3 className="text-sm font-semibold">相关公开笔记</h3>
-        {publicNotesQuery.isLoading ? <p className="mt-2 text-xs text-foreground/60">公开笔记加载中...</p> : null}
-        {publicNotesQuery.isError ? <p className="mt-2 text-xs text-red-600">公开笔记加载失败。</p> : null}
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-          {(publicNotesQuery.data ?? []).slice(0, 4).map((note) => (
-            <article key={note.id} className="rounded-md border border-border bg-background p-3">
-              <p className="text-sm font-medium">{note.title || "未命名笔记"}</p>
-              <p className="mt-1 max-h-12 overflow-hidden whitespace-pre-wrap text-xs leading-5 text-foreground/65">
-                {note.content}
-              </p>
-            </article>
-          ))}
-        </div>
-        {!publicNotesQuery.isLoading && !(publicNotesQuery.data ?? []).length ? (
-          <p className="mt-2 text-xs text-foreground/60">本章还没有公开笔记。</p>
-        ) : null}
-      </section>
+      {noteError ? <p className="mt-3 text-sm text-red-600">{noteError}</p> : null}
+      <ChapterPublicNotes
+        notes={publicNotesQuery.data ?? []}
+        isLoading={publicNotesQuery.isLoading}
+        isError={publicNotesQuery.isError}
+        onOpen={setSelectedNote}
+      />
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
         <div className="flex items-center gap-2">
@@ -153,10 +168,19 @@ export function LectureReader({
       </div>
       <NoteEditorDialog
         open={noteEditorOpen}
+        note={editingNote}
         initialCourseId={chapter.course_id}
         initialChapterId={chapter.id}
         initialContent={initialNoteContent}
         onClose={() => setNoteEditorOpen(false)}
+        onSaved={setSelectedNote}
+      />
+      <NoteDetailDrawer
+        note={selectedNote}
+        open={Boolean(selectedNote)}
+        onClose={() => setSelectedNote(null)}
+        onEdit={openEditNote}
+        onDelete={(note) => void handleDeleteNote(note)}
       />
     </div>
   );
