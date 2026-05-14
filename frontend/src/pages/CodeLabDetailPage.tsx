@@ -46,7 +46,7 @@ export function CodeLabDetailPage() {
   const isBusy = runMutation.isPending || submitMutation.isPending;
 
   if (!id) {
-    return <p className="text-sm text-red-600">题目不存在。</p>;
+    return <p className="text-sm text-destructive">题目不存在。</p>;
   }
 
   if (codelabQuery.isLoading) {
@@ -55,7 +55,7 @@ export function CodeLabDetailPage() {
 
   if (codelabQuery.isError || !codelabQuery.data) {
     return (
-      <p className="text-sm text-red-600">
+      <p className="text-sm text-destructive">
         {codelabQuery.error instanceof Error ? codelabQuery.error.message : "题目加载失败"}
       </p>
     );
@@ -98,15 +98,15 @@ export function CodeLabDetailPage() {
           <button
             type="button"
             onClick={() => navigate(`/codelab/${codelab.id}/edit`)}
-            className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+            className="rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted"
           >
             编辑题目
           </button>
         ) : null}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <div className="space-y-4 rounded-md border border-border bg-background p-4">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="min-w-0 space-y-4 rounded-md border border-border bg-surface p-4">
           <MarkdownRenderer content={codelab.description} />
           <div className="space-y-3">
             <h2 className="text-sm font-semibold">公开样例</h2>
@@ -145,7 +145,7 @@ export function CodeLabDetailPage() {
             onSubmit={() => void handleSubmit()}
           />
           {(runMutation.isError || submitMutation.isError) ? (
-            <p className="text-sm text-red-600">
+            <p className="text-sm text-destructive">
               {(runMutation.error ?? submitMutation.error) instanceof Error
                 ? (runMutation.error ?? submitMutation.error)?.message
                 : "执行失败"}

@@ -57,6 +57,19 @@ export function NoteEditorDialog({
     setErrorMessage("");
   }, [initialChapterId, initialContent, initialCourseId, note, open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open]);
+
   const canSave = useMemo(() => Boolean(content.trim()), [content]);
   const isPending = createNoteMutation.isPending || updateNoteMutation.isPending;
 
@@ -109,21 +122,21 @@ export function NoteEditorDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col rounded-lg border border-slate-200 bg-white text-slate-900 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-0 md:items-center md:p-4">
+      <div className="flex max-h-dvh w-full flex-col border border-border bg-surface text-foreground shadow-xl md:max-h-[92vh] md:max-w-4xl md:rounded-lg">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 md:px-5 md:py-4">
           <h2 className="text-lg font-semibold">{note ? "编辑笔记" : "新建笔记"}</h2>
-          <button type="button" onClick={onClose} className="rounded border border-slate-300 px-2 py-1 text-sm">
+          <button type="button" onClick={onClose} className="rounded border border-border bg-surface px-3 py-2 text-sm hover:bg-muted">
             关闭
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
+        <form onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="标题（可选）"
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2"
           />
 
           <div className="flex flex-wrap gap-2">
@@ -132,7 +145,7 @@ export function NoteEditorDialog({
                 key={snippet}
                 type="button"
                 onClick={() => setContent((current) => `${current}${current ? " " : ""}${snippet}`)}
-                className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100"
+                className="rounded border border-border bg-surface px-2 py-1 text-xs hover:bg-muted"
               >
                 {snippet}
               </button>
@@ -143,7 +156,7 @@ export function NoteEditorDialog({
             value={content}
             onChange={(event) => setContent(event.target.value)}
             placeholder="笔记内容（支持 Markdown / LaTeX）"
-            className="min-h-60 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+            className="min-h-60 w-full rounded-md border border-border bg-surface px-3 py-2"
           />
 
           <NoteRelationFields
@@ -160,10 +173,21 @@ export function NoteEditorDialog({
             公开分享
           </label>
 
-          {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+          {errorMessage ? <p className="text-sm text-destructive" role="alert">{errorMessage}</p> : null}
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
-            <button type="submit" disabled={!canSave || isPending} className="rounded border border-black px-3 py-2 text-sm font-medium text-black disabled:opacity-50">
+          <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-2 border-t border-border bg-surface px-4 py-3 md:-mx-5 md:px-5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded border border-border bg-surface px-3 py-2 text-sm hover:bg-muted"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              disabled={!canSave || isPending}
+              className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+            >
               {isPending ? "保存中..." : "发布"}
             </button>
           </div>

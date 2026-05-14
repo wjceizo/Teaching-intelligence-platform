@@ -15,13 +15,13 @@ export function SharedNotePage() {
   const noteQuery = useSharedNote(token);
 
   if (noteQuery.isLoading) {
-    return <p className="text-sm text-foreground/70">分享笔记加载中...</p>;
+    return <p className="text-sm text-muted-foreground">分享笔记加载中...</p>;
   }
 
   if (noteQuery.isError || !noteQuery.data) {
     return (
       <section className="space-y-3">
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-destructive">
           分享笔记加载失败：{noteQuery.error instanceof Error ? noteQuery.error.message : "链接不可用"}
         </p>
         <Link to="/notes" className="text-sm text-primary hover:underline">
@@ -41,14 +41,14 @@ export function SharedNotePage() {
       </Link>
       <header className="border-b border-border pb-4">
         <h1 className="text-2xl font-semibold">{note.title || "未命名笔记"}</h1>
-        <p className="mt-2 text-xs text-foreground/60">
-          作者：{note.user.username} · {formatDate(note.updated_at)}
-          {source ? ` · ${source}` : ""}
+        <p className="mt-2 text-xs text-muted-foreground">
+          作者：{note.user.username} / {formatDate(note.updated_at)}
+          {source ? ` / ${source}` : ""}
         </p>
         {note.tags.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {note.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-sky-100 px-2 py-1 text-xs text-sky-700">
+              <span key={tag} className="rounded-full bg-info-surface px-2 py-1 text-xs text-info">
                 {tag}
               </span>
             ))}

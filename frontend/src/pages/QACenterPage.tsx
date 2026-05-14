@@ -39,13 +39,13 @@ export function QACenterPage() {
   }, [locationState?.openAsk]);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 pb-20 md:pb-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">问答中心</h1>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
-        <aside className="space-y-3 rounded-xl border border-border bg-background p-3">
+        <aside className="space-y-3 rounded-xl border border-border bg-surface p-3">
           <p className="text-sm font-semibold">筛选条件</p>
 
           <select
@@ -54,7 +54,7 @@ export function QACenterPage() {
               setCourseId(event.target.value);
               setPage(1);
             }}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <option value="">全部课程</option>
             {(coursesQuery.data?.data ?? []).map((course) => (
@@ -70,7 +70,7 @@ export function QACenterPage() {
               setStatus(event.target.value as "all" | "open" | "resolved");
               setPage(1);
             }}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <option value="all">全部状态</option>
             <option value="open">未解决</option>
@@ -83,7 +83,7 @@ export function QACenterPage() {
               setSort(event.target.value as "latest" | "hot" | "unanswered");
               setPage(1);
             }}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
           >
             <option value="latest">最新</option>
             <option value="hot">最热</option>
@@ -91,49 +91,28 @@ export function QACenterPage() {
           </select>
         </aside>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setTab("all");
-                setPage(1);
-              }}
-              className={`rounded-md border px-3 py-1 text-sm ${
-                tab === "all" ? "border-primary bg-primary/10 text-primary" : "border-border"
-              }`}
-            >
-              全部
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTab("ai");
-                setPage(1);
-              }}
-              className={`rounded-md border px-3 py-1 text-sm ${
-                tab === "ai" ? "border-primary bg-primary/10 text-primary" : "border-border"
-              }`}
-            >
-              AI答疑
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTab("teacher");
-                setPage(1);
-              }}
-              className={`rounded-md border px-3 py-1 text-sm ${
-                tab === "teacher" ? "border-primary bg-primary/10 text-primary" : "border-border"
-              }`}
-            >
-              教师答疑
-            </button>
+            {(["all", "ai", "teacher"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => {
+                  setTab(item);
+                  setPage(1);
+                }}
+                className={`rounded-md border px-3 py-1 text-sm ${
+                  tab === item ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface hover:bg-muted"
+                }`}
+              >
+                {item === "all" ? "全部" : item === "ai" ? "AI 答疑" : "教师答疑"}
+              </button>
+            ))}
           </div>
 
-          {questionsQuery.isLoading ? <p className="text-sm text-foreground/70">问题加载中...</p> : null}
+          {questionsQuery.isLoading ? <p className="text-sm text-muted-foreground">问题加载中...</p> : null}
           {questionsQuery.isError ? (
-            <p className="text-sm text-red-600">问题加载失败：{questionsQuery.error.message}</p>
+            <p className="text-sm text-destructive">问题加载失败：{questionsQuery.error.message}</p>
           ) : null}
 
           <div className="space-y-3">
@@ -143,21 +122,21 @@ export function QACenterPage() {
           </div>
 
           {questionsQuery.data ? (
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((previous) => Math.max(1, previous - 1))}
-                className="rounded border border-border px-3 py-1 text-sm disabled:opacity-40"
+                className="rounded border border-border bg-surface px-3 py-1 text-sm hover:bg-muted disabled:opacity-40"
               >
                 上一页
               </button>
-              <span className="text-sm text-foreground/70">第 {page} 页</span>
+              <span className="text-sm text-muted-foreground">第 {page} 页</span>
               <button
                 type="button"
                 disabled={page * pageSize >= questionsQuery.data.meta.total}
                 onClick={() => setPage((previous) => previous + 1)}
-                className="rounded border border-border px-3 py-1 text-sm disabled:opacity-40"
+                className="rounded border border-border bg-surface px-3 py-1 text-sm hover:bg-muted disabled:opacity-40"
               >
                 下一页
               </button>
@@ -169,7 +148,7 @@ export function QACenterPage() {
       <button
         type="button"
         onClick={() => setShowAskDialog(true)}
-        className="fixed bottom-8 right-8 z-30 rounded-full border border-black bg-background px-5 py-3 text-sm font-semibold shadow-lg"
+        className="fixed inset-x-4 bottom-4 z-30 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg md:inset-x-auto md:right-8"
       >
         提问
       </button>

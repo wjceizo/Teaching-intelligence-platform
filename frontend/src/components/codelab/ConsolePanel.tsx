@@ -31,14 +31,14 @@ export function ConsolePanel({ activeSubmission, submissions, loadingHistory }: 
       : 0;
 
   return (
-    <div className="rounded-md border border-border bg-background">
-      <div className="flex border-b border-border">
+    <div className="rounded-md border border-border bg-surface">
+      <div className="flex overflow-x-auto border-b border-border">
         {(["output", "tests", "history"] as ConsoleTab[]).map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setTab(item)}
-            className={`px-4 py-2 text-sm ${tab === item ? "border-b-2 border-primary text-primary" : "text-foreground/70"}`}
+            className={`shrink-0 px-4 py-2 text-sm ${tab === item ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}
           >
             {item === "output" ? "输出" : item === "tests" ? "测试结果" : "提交历史"}
           </button>
@@ -58,9 +58,9 @@ export function ConsolePanel({ activeSubmission, submissions, loadingHistory }: 
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-sm font-medium">
-                    {statusLabel(activeSubmission.status)} · {activeSubmission.score}/{activeSubmission.max_score}
+                    {statusLabel(activeSubmission.status)} / {activeSubmission.score}/{activeSubmission.max_score}
                   </span>
-                  <span className="text-xs text-foreground/60">
+                  <span className="text-xs text-muted-foreground">
                     {activeSubmission.tests_passed}/{activeSubmission.tests_total} 个用例通过
                   </span>
                 </div>
@@ -70,16 +70,16 @@ export function ConsolePanel({ activeSubmission, submissions, loadingHistory }: 
                 <div className="space-y-2">
                   {activeSubmission.results.map((result) => (
                     <div key={`${result.test_case_id}-${result.name}`} className="rounded-md border border-border p-3">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-medium">
                           {result.is_hidden ? "隐藏用例" : result.name}
                         </span>
-                        <span className={`text-xs ${result.passed ? "text-emerald-600" : "text-red-600"}`}>
-                          {result.passed ? "通过" : "失败"} · {result.points} 分
+                        <span className={`text-xs ${result.passed ? "text-success" : "text-destructive"}`}>
+                          {result.passed ? "通过" : "失败"} / {result.points} 分
                         </span>
                       </div>
                       {result.is_hidden ? (
-                        <p className="mt-2 text-xs text-foreground/60">隐藏用例内容不会向学生公开。</p>
+                        <p className="mt-2 text-xs text-muted-foreground">隐藏用例内容不会向学生公开。</p>
                       ) : (
                         <div className="mt-2 grid gap-2 text-xs md:grid-cols-3">
                           <pre className="overflow-auto rounded bg-muted p-2">输入{"\n"}{result.input_data ?? ""}</pre>
@@ -87,13 +87,13 @@ export function ConsolePanel({ activeSubmission, submissions, loadingHistory }: 
                           <pre className="overflow-auto rounded bg-muted p-2">实际{"\n"}{result.actual_output ?? ""}</pre>
                         </div>
                       )}
-                      {result.error ? <p className="mt-2 text-xs text-red-600">{result.error}</p> : null}
+                      {result.error ? <p className="mt-2 text-xs text-destructive">{result.error}</p> : null}
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <p className="text-sm text-foreground/70">运行或提交后会在这里显示测试结果。</p>
+              <p className="text-sm text-muted-foreground">运行或提交后会在这里显示测试结果。</p>
             )}
           </div>
         ) : null}

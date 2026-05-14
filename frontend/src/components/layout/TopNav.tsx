@@ -31,49 +31,55 @@ export function TopNav() {
     clearCloseTimer();
     closeTimerRef.current = window.setTimeout(() => {
       setMenuOpen(false);
-    }, 320);
+    }, 220);
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface/95 px-3 backdrop-blur md:px-4">
+      <div className="flex min-w-0 items-center gap-2 md:gap-3">
         <button
           type="button"
           onClick={toggleSidebar}
-          className="rounded-md border border-border px-2 py-1 text-sm hover:bg-muted"
+          aria-label="切换导航菜单"
+          className="inline-flex min-h-10 items-center rounded-md border border-border bg-surface px-3 text-sm hover:bg-muted"
         >
           菜单
         </button>
-        <div className="font-semibold text-primary">MathEdu AI</div>
+        <div className="truncate font-semibold text-primary">MathEdu AI</div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 md:gap-3">
         <button
           type="button"
           onClick={() => setTheme(nextTheme)}
-          className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted"
+          aria-label="切换深浅色主题"
+          className="inline-flex min-h-10 items-center rounded-md border border-border bg-surface px-3 text-sm hover:bg-muted"
         >
-          {theme === "light" ? "暗色" : "亮色"}
+          {theme === "light" ? "夜间" : "日间"}
         </button>
 
         <div className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenuLater}>
-          <button type="button" className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted">
-            {user?.name ?? "访客"}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((value) => !value)}
+            className="inline-flex min-h-10 max-w-[9rem] items-center rounded-md border border-border bg-surface px-3 text-sm hover:bg-muted"
+          >
+            <span className="truncate">{user?.name ?? "访客"}</span>
           </button>
           {menuOpen ? (
-            <div className="absolute right-0 z-20 mt-2 w-36 rounded-md border border-border bg-white p-1 shadow-lg">
+            <div className="absolute right-0 z-40 mt-2 w-40 rounded-md border border-border bg-surface-elevated p-1 shadow-xl">
               <button
                 type="button"
-                className="block w-full rounded px-2 py-1 text-left text-sm hover:bg-muted"
+                className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-muted"
               >
                 个人中心
               </button>
               <button
                 type="button"
                 onClick={logout}
-                className="block w-full rounded px-2 py-1 text-left text-sm hover:bg-muted"
+                className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-destructive-surface"
               >
-                退出
+                退出登录
               </button>
             </div>
           ) : null}

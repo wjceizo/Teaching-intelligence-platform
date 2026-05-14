@@ -66,8 +66,8 @@ export function NotesPage() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="space-y-4 pb-20 md:pb-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl font-semibold">笔记</h1>
         <input
           value={search}
@@ -76,12 +76,12 @@ export function NotesPage() {
             setPage(1);
           }}
           placeholder="搜索标题与内容"
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm md:w-80"
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm md:w-80"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
-        <aside className="space-y-4 rounded-lg border border-border bg-background p-4">
+        <aside className="space-y-4 rounded-lg border border-border bg-surface p-4">
           <div>
             <p className="mb-2 text-sm font-semibold">课程</p>
             <select
@@ -90,7 +90,7 @@ export function NotesPage() {
                 setCourseId(event.target.value);
                 setPage(1);
               }}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
             >
               <option value="">全部课程</option>
               {(coursesQuery.data?.data ?? []).map((course) => (
@@ -112,7 +112,9 @@ export function NotesPage() {
                     setVisibility(item);
                     setPage(1);
                   }}
-                  className={`rounded-md px-2 py-1.5 text-xs ${visibility === item ? "bg-background shadow-sm" : ""}`}
+                  className={`rounded-md px-2 py-1.5 text-xs ${
+                    visibility === item ? "bg-surface text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
                   {item === "all" ? "全部" : item === "private" ? "私有" : "公开"}
                 </button>
@@ -132,21 +134,21 @@ export function NotesPage() {
                     setPage(1);
                   }}
                   className={`rounded-full border px-2 py-1 text-xs ${
-                    activeTag === tag ? "border-primary bg-primary/10 text-primary" : "border-border"
+                    activeTag === tag ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface hover:bg-muted"
                   }`}
                 >
                   {tag}
                 </button>
               ))}
-              {!tagCloud.length ? <span className="text-xs text-foreground/55">暂无标签</span> : null}
+              {!tagCloud.length ? <span className="text-xs text-muted-foreground">暂无标签</span> : null}
             </div>
           </div>
         </aside>
 
-        <div className="space-y-3">
-          {notesQuery.isLoading ? <p className="text-sm text-foreground/70">笔记加载中...</p> : null}
-          {notesQuery.isError ? <p className="text-sm text-red-600">笔记加载失败：{notesQuery.error.message}</p> : null}
-          {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+        <div className="min-w-0 space-y-3">
+          {notesQuery.isLoading ? <p className="text-sm text-muted-foreground">笔记加载中...</p> : null}
+          {notesQuery.isError ? <p className="text-sm text-destructive">笔记加载失败：{notesQuery.error.message}</p> : null}
+          {errorMessage ? <p className="text-sm text-destructive" role="alert">{errorMessage}</p> : null}
 
           <div className="columns-1 gap-4 md:columns-2 xl:columns-3">
             {notes.map((note) => (
@@ -156,15 +158,15 @@ export function NotesPage() {
             ))}
           </div>
 
-          {!notesQuery.isLoading && !notes.length ? <p className="text-sm text-foreground/60">还没有匹配的笔记。</p> : null}
+          {!notesQuery.isLoading && !notes.length ? <p className="text-sm text-muted-foreground">还没有匹配的笔记。</p> : null}
 
           {notesQuery.data ? (
-            <div className="flex items-center justify-end gap-2">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded border border-border px-3 py-1 text-sm disabled:opacity-40">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="rounded border border-border bg-surface px-3 py-1 text-sm hover:bg-muted disabled:opacity-40">
                 上一页
               </button>
-              <span className="text-sm text-foreground/70">第 {page} 页</span>
-              <button type="button" disabled={page * pageSize >= notesQuery.data.meta.total} onClick={() => setPage((value) => value + 1)} className="rounded border border-border px-3 py-1 text-sm disabled:opacity-40">
+              <span className="text-sm text-muted-foreground">第 {page} 页</span>
+              <button type="button" disabled={page * pageSize >= notesQuery.data.meta.total} onClick={() => setPage((value) => value + 1)} className="rounded border border-border bg-surface px-3 py-1 text-sm hover:bg-muted disabled:opacity-40">
                 下一页
               </button>
             </div>
@@ -172,7 +174,11 @@ export function NotesPage() {
         </div>
       </div>
 
-      <button type="button" onClick={() => openEditor()} className="fixed bottom-8 right-8 z-30 rounded-full border border-black bg-background px-5 py-3 text-sm font-semibold shadow-lg">
+      <button
+        type="button"
+        onClick={() => openEditor()}
+        className="fixed inset-x-4 bottom-4 z-30 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg md:inset-x-auto md:right-8"
+      >
         新建笔记
       </button>
 

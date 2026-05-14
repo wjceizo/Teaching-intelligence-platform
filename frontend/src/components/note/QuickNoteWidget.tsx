@@ -57,10 +57,10 @@ export function QuickNoteWidget({ open, courseId, chapterId, onClose }: QuickNot
   }
 
   return (
-    <div className="absolute right-4 top-24 z-20 w-80 rounded-lg border border-border bg-background p-4 shadow-xl">
+    <div className="absolute right-4 top-24 z-20 w-[min(20rem,calc(100vw-2rem))] rounded-lg border border-border bg-surface p-4 shadow-xl">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">快速笔记</h3>
-        <button type="button" onClick={onClose} className="rounded border border-border px-2 py-1 text-xs">
+        <button type="button" onClick={onClose} className="rounded border border-border px-2 py-1 text-xs hover:bg-muted">
           关闭
         </button>
       </div>
@@ -69,20 +69,20 @@ export function QuickNoteWidget({ open, courseId, chapterId, onClose }: QuickNot
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="标题（可选）"
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
         />
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          placeholder="选中文字后点击添加笔记，可自动摘录。"
-          className="min-h-40 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          placeholder="选中文字后添加笔记，也可以直接输入。"
+          className="min-h-40 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
         />
-        {errorMessage ? <p className="text-xs text-red-600">{errorMessage}</p> : null}
+        {errorMessage ? <p className="text-xs text-destructive" role="alert">{errorMessage}</p> : null}
         <button
           type="button"
           onClick={() => void handleSave()}
           disabled={!content.trim() || createNoteMutation.isPending}
-          className="w-full rounded border border-black px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
+          className="w-full rounded bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
         >
           {createNoteMutation.isPending ? "保存中..." : "保存笔记"}
         </button>

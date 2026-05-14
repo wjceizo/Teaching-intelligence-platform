@@ -35,12 +35,12 @@ export function RegisterPage() {
     }
 
     if (!passwordValid) {
-      setError("密码至少8位，且必须包含字母和数字。");
+      setError("密码至少 8 位，并且必须包含字母和数字。");
       return;
     }
 
     if (!passwordsMatch) {
-      setError("两次输入的密码不一致");
+      setError("两次输入的密码不一致。");
       return;
     }
 
@@ -57,8 +57,8 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-100 via-cyan-50 to-sky-100 px-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-lg">
+    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-emerald-100 via-cyan-50 to-sky-100 px-4">
+      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-lg">
         <h1 className="mb-5 text-center text-2xl font-semibold">注册账号</h1>
         <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
@@ -70,7 +70,7 @@ export function RegisterPage() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2"
             />
           </div>
 
@@ -84,7 +84,7 @@ export function RegisterPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2"
             />
           </div>
 
@@ -96,7 +96,7 @@ export function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="text-xs text-foreground/70 underline"
+                className="rounded px-2 py-1 text-xs text-foreground/70 underline hover:bg-muted"
               >
                 {showPassword ? "隐藏" : "显示"}
               </button>
@@ -107,9 +107,9 @@ export function RegisterPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"
-              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2"
             />
-            <p className="mt-1 text-xs text-foreground/70">密码至少8位，且必须包含字母和数字。</p>
+            <p className="mt-1 text-xs text-muted-foreground">密码至少 8 位，并且必须包含字母和数字。</p>
           </div>
 
           <div>
@@ -120,7 +120,7 @@ export function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword((prev) => !prev)}
-                className="text-xs text-foreground/70 underline"
+                className="rounded px-2 py-1 text-xs text-foreground/70 underline hover:bg-muted"
               >
                 {showConfirmPassword ? "隐藏" : "显示"}
               </button>
@@ -131,16 +131,16 @@ export function RegisterPage() {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               autoComplete="new-password"
-              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2"
             />
           </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
 
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full rounded-md border border-black bg-white px-4 py-2 font-medium text-black disabled:opacity-50"
+            className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground disabled:opacity-50"
           >
             {registerMutation.isPending ? "注册中..." : "注册"}
           </button>

@@ -28,8 +28,8 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-lg">
+    <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4">
+      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-lg">
         <h1 className="mb-5 text-center text-2xl font-semibold">登录平台</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -42,7 +42,7 @@ export function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2"
             />
           </div>
 
@@ -56,16 +56,16 @@ export function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="new-password"
-              className="w-full rounded-md border border-border bg-background px-3 py-2"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2"
             />
           </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
 
           <button
             type="submit"
             disabled={loginMutation.isPending}
-            className="w-full rounded-md border border-black bg-transparent px-4 py-2 font-medium text-black disabled:opacity-50"
+            className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground disabled:opacity-50"
           >
             {loginMutation.isPending ? "登录中..." : "登录"}
           </button>

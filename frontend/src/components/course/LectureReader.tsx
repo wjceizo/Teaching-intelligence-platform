@@ -160,7 +160,7 @@ export function LectureReader({
             type="button"
             onClick={onMarkCompleted}
             disabled={markCompletedPending}
-            className="rounded-md border border-black bg-transparent px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
             {markCompletedPending ? "提交中..." : "完成本章"}
           </button>

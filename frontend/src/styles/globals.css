@@ -1,25 +1,257 @@
 ﻿@import "tailwindcss";
 
 :root {
-  --background: 210 20% 98%;
+  color-scheme: light;
+  --background: 210 24% 97%;
   --foreground: 222 47% 11%;
+  --surface: 0 0% 100%;
+  --surface-elevated: 210 40% 99%;
   --primary: 221 83% 53%;
-  --muted: 210 30% 92%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 214 32% 91%;
+  --muted-foreground: 215 16% 38%;
   --border: 214 32% 86%;
+  --destructive: 0 72% 45%;
+  --destructive-surface: 0 86% 97%;
+  --success: 151 65% 33%;
+  --success-surface: 149 80% 94%;
+  --warning: 35 92% 35%;
+  --warning-surface: 48 96% 91%;
+  --info: 199 89% 40%;
+  --info-surface: 204 94% 94%;
 }
 
 .dark {
-  --background: 222 47% 11%;
-  --foreground: 210 20% 98%;
-  --primary: 217 91% 60%;
-  --muted: 222 30% 20%;
-  --border: 217 19% 28%;
+  color-scheme: dark;
+  --background: 224 38% 7%;
+  --foreground: 214 32% 92%;
+  --surface: 223 31% 12%;
+  --surface-elevated: 222 29% 16%;
+  --primary: 190 95% 52%;
+  --primary-foreground: 222 47% 8%;
+  --muted: 223 25% 18%;
+  --muted-foreground: 215 18% 70%;
+  --border: 219 18% 26%;
+  --destructive: 2 84% 68%;
+  --destructive-surface: 0 46% 16%;
+  --success: 150 72% 48%;
+  --success-surface: 153 42% 15%;
+  --warning: 41 96% 62%;
+  --warning-surface: 37 45% 17%;
+  --info: 194 92% 56%;
+  --info-surface: 199 45% 16%;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  color: hsl(var(--foreground));
+  caret-color: hsl(var(--primary));
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground) / 0.72);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.28);
+}
+
+.bg-background {
+  background-color: hsl(var(--surface));
+}
+
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-gray-50 {
+  background-color: hsl(var(--surface));
+}
+
+.dark .text-black,
+.dark .text-slate-900,
+.dark .text-gray-900 {
+  color: hsl(var(--foreground));
+}
+
+.dark .border-black,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: hsl(var(--border));
+}
+
+.dark .text-red-600,
+.dark .text-red-700,
+.dark .text-rose-700 {
+  color: hsl(var(--destructive));
+}
+
+.dark .bg-red-50,
+.dark .bg-red-100,
+.dark .bg-rose-50,
+.dark .bg-rose-100 {
+  background-color: hsl(var(--destructive-surface));
+}
+
+.dark .border-red-300,
+.dark .border-red-600,
+.dark .border-rose-500 {
+  border-color: hsl(var(--destructive) / 0.55);
+}
+
+.dark .text-emerald-600,
+.dark .text-emerald-700 {
+  color: hsl(var(--success));
+}
+
+.dark .bg-emerald-50,
+.dark .bg-emerald-100 {
+  background-color: hsl(var(--success-surface));
+}
+
+.dark .border-emerald-500 {
+  border-color: hsl(var(--success));
+}
+
+.dark .text-amber-600,
+.dark .text-amber-700,
+.dark .text-orange-700 {
+  color: hsl(var(--warning));
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-100,
+.dark .bg-orange-100 {
+  background-color: hsl(var(--warning-surface));
+}
+
+.dark .border-amber-300 {
+  border-color: hsl(var(--warning) / 0.55);
+}
+
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-cyan-700,
+.dark .text-sky-700,
+.dark .text-indigo-700,
+.dark .text-teal-700 {
+  color: hsl(var(--info));
+}
+
+.dark .bg-blue-100,
+.dark .bg-cyan-100,
+.dark .bg-sky-100,
+.dark .bg-indigo-100,
+.dark .bg-teal-100 {
+  background-color: hsl(var(--info-surface));
+}
+
+.dark .text-lime-700,
+.dark .bg-lime-100 {
+  color: hsl(var(--success));
+  background-color: hsl(var(--success-surface));
+}
+
+.dark .bg-slate-100 {
+  background-color: hsl(var(--muted));
+}
+
+.dark .text-slate-500,
+.dark .text-slate-700 {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .bg-purple-100 {
+  background-color: hsl(var(--muted));
+}
+
+.dark .text-purple-700 {
+  color: hsl(var(--foreground));
+}
+
+.dark .bg-gradient-to-br {
+  background:
+    radial-gradient(circle at top left, hsl(var(--primary) / 0.18), transparent 28rem),
+    linear-gradient(135deg, hsl(var(--background)), hsl(var(--muted)));
+}
+
+.prose {
+  color: hsl(var(--foreground));
+}
+
+.prose :where(a) {
+  color: hsl(var(--primary));
+}
+
+.prose :where(strong) {
+  color: hsl(var(--foreground));
+}
+
+.prose :where(blockquote) {
+  color: hsl(var(--muted-foreground));
+  border-left-color: hsl(var(--primary) / 0.55);
+}
+
+.prose :where(hr) {
+  border-color: hsl(var(--border));
+}
+
+.prose :where(thead) {
+  border-bottom-color: hsl(var(--border));
+}
+
+.prose :where(tbody tr) {
+  border-bottom-color: hsl(var(--border));
+}
+
+.prose :where(code) {
+  color: hsl(var(--foreground));
+}
+
+.prose :where(pre) {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
 }

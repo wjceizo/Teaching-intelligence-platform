@@ -3,7 +3,9 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+import { useUIStore } from "../../stores/uiStore";
 
 interface MarkdownRendererProps {
   content: string;
@@ -30,8 +32,10 @@ export function MarkdownRenderer({
   enableParagraphAsk = false,
   onAskParagraph,
 }: MarkdownRendererProps) {
+  const theme = useUIStore((state) => state.theme);
+
   return (
-    <div className="prose prose-slate max-w-none">
+    <div className="prose prose-slate max-w-none dark:prose-invert">
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -45,7 +49,7 @@ export function MarkdownRenderer({
                   <button
                     type="button"
                     onClick={() => onAskParagraph?.(paragraphText)}
-                    className="absolute -right-10 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-background px-2 py-1 text-xs group-hover:block"
+                    className="absolute -right-10 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-surface px-2 py-1 text-xs group-hover:block"
                   >
                     提问
                   </button>
@@ -63,10 +67,15 @@ export function MarkdownRenderer({
 
             return (
               <SyntaxHighlighter
-                style={oneLight}
+                style={theme === "dark" ? oneDark : oneLight}
                 language={match[1]}
                 PreTag="div"
-                customStyle={{ borderRadius: 10, marginTop: 8, marginBottom: 8 }}
+                customStyle={{
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 10,
+                  marginTop: 8,
+                  marginBottom: 8,
+                }}
               >
                 {String(children).replace(/\n$/, "")}
               </SyntaxHighlighter>

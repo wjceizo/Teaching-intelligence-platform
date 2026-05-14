@@ -25,7 +25,7 @@ export function NoteRelationFields({
           onCourseChange(event.target.value);
           onChapterChange("");
         }}
-        className="rounded-md border border-slate-300 bg-white px-3 py-2"
+        className="rounded-md border border-border bg-surface px-3 py-2"
       >
         <option value="">不关联课程</option>
         {(coursesQuery.data?.data ?? []).map((course) => (
@@ -38,7 +38,7 @@ export function NoteRelationFields({
       <select
         value={chapterId}
         onChange={(event) => onChapterChange(event.target.value)}
-        className="rounded-md border border-slate-300 bg-white px-3 py-2"
+        className="rounded-md border border-border bg-surface px-3 py-2 disabled:opacity-60"
         disabled={!courseId}
       >
         <option value="">不关联章节</option>

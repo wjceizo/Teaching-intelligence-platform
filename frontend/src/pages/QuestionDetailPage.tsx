@@ -181,7 +181,7 @@ export function QuestionDetailPage() {
                   });
                   setEditingQuestion(false);
                 }}
-                className="rounded border border-black px-3 py-1 text-sm disabled:opacity-50"
+                className="rounded border border-border bg-surface px-3 py-1 text-sm hover:bg-muted disabled:opacity-50"
               >
                 保存问题
               </button>
@@ -215,7 +215,7 @@ export function QuestionDetailPage() {
               type="button"
               onClick={() => resolveMutation.mutate(question.id)}
               disabled={resolveMutation.isPending}
-              className="rounded-md border border-black bg-transparent px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
+              className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
             >
               {resolveMutation.isPending ? "处理中..." : "标记为已解决"}
             </button>
@@ -287,7 +287,7 @@ export function QuestionDetailPage() {
             <button
               type="submit"
               disabled={createAnswerMutation.isPending || !answerContent.trim()}
-              className="rounded-md border border-black bg-transparent px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
               {createAnswerMutation.isPending ? "提交中..." : "提交回答"}
             </button>

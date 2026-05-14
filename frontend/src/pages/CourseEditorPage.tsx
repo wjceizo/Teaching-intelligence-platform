@@ -451,7 +451,7 @@ export function CourseEditorPage() {
           type="button"
           onClick={handleSaveCourseTitle}
           disabled={!hasCourseTitlePendingChange || updateCourseMutation.isPending}
-          className="rounded-md border border-black bg-transparent px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
+          className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
         >
           保存课程名称
         </button>
@@ -487,7 +487,7 @@ export function CourseEditorPage() {
               type="button"
               onClick={() => void handleAddChapter()}
               disabled={createChapterMutation.isPending}
-              className="rounded-md border border-black bg-transparent px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
+              className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
             >
               {createChapterMutation.isPending ? "添加中..." : "添加章节"}
             </button>
@@ -556,7 +556,7 @@ export function CourseEditorPage() {
                   type="button"
                   onClick={saveCurrentChapter}
                   disabled={updateChapterMutation.isPending || !hasPendingChange}
-                  className="rounded-md border border-black bg-transparent px-3 py-1 text-sm font-medium text-black disabled:opacity-50"
+                  className="rounded-md border border-border bg-surface px-3 py-1 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
                 >
                   保存修改
                 </button>

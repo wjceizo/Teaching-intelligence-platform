@@ -32,6 +32,19 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
     setExpiresInHours(24);
   }, [note?.id, open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open]);
+
   if (!open || !note) {
     return null;
   }
@@ -56,19 +69,19 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
   }
 
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-white text-slate-900">
-      <section className="mx-auto max-w-4xl space-y-5 px-6 py-6">
-        <button type="button" onClick={onClose} className="text-sm text-blue-600 hover:underline">
+    <div className="fixed inset-0 z-40 overflow-y-auto bg-background text-foreground">
+      <section className="mx-auto max-w-4xl space-y-5 px-4 py-5 md:px-6 md:py-6">
+        <button type="button" onClick={onClose} className="text-sm text-primary hover:underline">
           返回笔记
         </button>
 
-        <header className="border-b border-slate-200 pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold">{note.title || "未命名笔记"}</h1>
-              <p className="mt-2 text-xs text-slate-500">
-                作者：{note.user.username} · {formatDate(note.updated_at)}
-                {source ? ` · ${source}` : ""}
+        <header className="border-b border-border pb-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <h1 className="break-words text-2xl font-semibold">{note.title || "未命名笔记"}</h1>
+              <p className="mt-2 text-xs text-muted-foreground">
+                作者：{note.user.username} / {formatDate(note.updated_at)}
+                {source ? ` / ${source}` : ""}
               </p>
             </div>
           </div>
@@ -78,7 +91,7 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
               <button
                 type="button"
                 onClick={() => onEdit(note)}
-                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
+                className="rounded border border-border bg-surface px-3 py-2 text-sm hover:bg-muted"
               >
                 编辑
               </button>
@@ -87,18 +100,18 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
               <select
                 value={expiresInHours}
                 onChange={(event) => setExpiresInHours(Number(event.target.value) as 1 | 24 | 168)}
-                className="rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                className="rounded border border-border bg-surface px-3 py-2 text-sm"
               >
-                <option value={1}>1小时</option>
-                <option value={24}>1天</option>
-                <option value={168}>7天</option>
+                <option value={1}>1 小时</option>
+                <option value={24}>1 天</option>
+                <option value={168}>7 天</option>
               </select>
             ) : null}
             {canManage ? (
               <button
                 type="button"
                 onClick={() => void handleShare()}
-                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
+                className="rounded border border-border bg-surface px-3 py-2 text-sm hover:bg-muted"
               >
                 {createShareMutation.isPending ? "生成中..." : "分享"}
               </button>
@@ -107,20 +120,20 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
               <button
                 type="button"
                 onClick={() => onDelete(note)}
-                className="rounded border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+                className="rounded border border-destructive/45 bg-destructive-surface px-3 py-2 text-sm text-destructive hover:bg-destructive-surface/80"
               >
                 删除
               </button>
             ) : null}
-            <span className="rounded-full border border-border px-2 py-1 text-xs text-foreground/65">
+            <span className="rounded-full border border-border px-2 py-1 text-xs text-muted-foreground">
               {note.is_public ? "公开" : "私有"}
             </span>
-            {copyMessage ? <span className="text-xs text-slate-500">{copyMessage}</span> : null}
+            {copyMessage ? <span className="text-xs text-muted-foreground">{copyMessage}</span> : null}
           </div>
           {note.tags.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {note.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-sky-100 px-2 py-1 text-xs text-sky-700">
+                <span key={tag} className="rounded-full bg-info-surface px-2 py-1 text-xs text-info">
                   {tag}
                 </span>
               ))}
@@ -130,7 +143,7 @@ export function NoteDetailDrawer({ note, open, onClose, onEdit, onDelete }: Note
             <input
               readOnly
               value={shareUrl}
-              className="mt-3 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-xs"
+              className="mt-3 w-full rounded-md border border-border bg-muted px-3 py-2 text-xs"
             />
           ) : null}
         </header>

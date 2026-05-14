@@ -56,7 +56,7 @@ export function AnswerItem({
                 onUpdate(answer.id, draftContent.trim());
                 setEditing(false);
               }}
-              className="rounded border border-black px-3 py-1 text-sm disabled:opacity-50"
+              className="rounded border border-border bg-surface px-3 py-1 text-sm hover:bg-muted disabled:opacity-50"
             >
               保存
             </button>

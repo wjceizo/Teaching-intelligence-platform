@@ -32,7 +32,8 @@ export function NoteTagInput({ tags, onChange }: NoteTagInputProps) {
           key={tag}
           type="button"
           onClick={() => onChange(tags.filter((item) => item !== tag))}
-          className="rounded-full bg-sky-100 px-3 py-1 text-xs text-sky-700"
+          className="rounded-full bg-info-surface px-3 py-1 text-xs text-info hover:bg-info/15"
+          aria-label={`移除标签 ${tag}`}
         >
           {tag} x
         </button>
@@ -42,7 +43,7 @@ export function NoteTagInput({ tags, onChange }: NoteTagInputProps) {
         onChange={(event) => setTagInput(event.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="输入标签后按 Enter"
-        className="min-w-48 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+        className="min-w-48 flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm"
       />
     </div>
   );

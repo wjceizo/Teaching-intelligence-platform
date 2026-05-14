@@ -148,7 +148,7 @@ export function CourseListPage() {
           <button
             type="button"
             onClick={() => setShowCreateForm((prev) => !prev)}
-            className="rounded-md border border-black bg-transparent px-4 py-2 text-sm font-medium text-black"
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             {showCreateForm ? "收起创建面板" : "创建课程"}
           </button>
@@ -189,7 +189,7 @@ export function CourseListPage() {
             type="button"
             onClick={() => void handleCreateCourse()}
             disabled={createCourseMutation.isPending}
-            className="rounded-md border border-black bg-transparent px-4 py-2 text-sm font-medium text-black disabled:opacity-50"
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
           >
             {createCourseMutation.isPending ? "创建中..." : "确认创建"}
           </button>
