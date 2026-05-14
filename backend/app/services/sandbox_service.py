@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from typing import TypedDict
 
 import docker
-from docker.errors import DockerException
+from docker.errors import DockerException, ImageNotFound
 
 from app.config import get_settings
 
@@ -62,9 +62,28 @@ class SandboxService:
         except DockerException as exc:
             return SandboxService._error_result(test_cases, max_score, started, f"Docker unavailable: {exc}")
 
+        source_name, image, command = SandboxService._language_runtime(language)
+
+        # Check image exists locally, do not attempt to pull
+        try:
+            client.images.get(image)
+        except ImageNotFound:
+            return SandboxService._error_result(
+                test_cases,
+                max_score,
+                started,
+                f"Sandbox image '{image}' not found locally. Please run: docker pull {image}",
+            )
+        except DockerException as exc:
+            return SandboxService._error_result(
+                test_cases,
+                max_score,
+                started,
+                f"Failed to check sandbox image '{image}': {exc}",
+            )
+
         with TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
-            source_name, image, command = SandboxService._language_runtime(language)
             (workspace / source_name).write_text(code, encoding="utf-8")
 
             for test_case in test_cases:

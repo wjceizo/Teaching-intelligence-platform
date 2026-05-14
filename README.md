@@ -19,6 +19,9 @@
 ```powershell
 Copy-Item .env.example .env
 docker compose up -d
+docker pull python:3.12-slim
+docker pull node:20-slim
+docker pull gcc:13
 ```
 
 ## 3. 启动后端
