@@ -411,13 +411,29 @@ export function CourseEditorPage() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">课程编辑器：{courseQuery.data.title}</h1>
-        <button
-          type="button"
-          onClick={() => navigate(`/courses/${id}`)}
-          className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
-        >
-          返回课程详情
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/codelab/new?course_id=${id}${selectedChapterId ? `&chapter_id=${selectedChapterId}` : ""}`)}
+            className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+          >
+            新建实训题
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/codelab/manage")}
+            className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+          >
+            管理实训题
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/courses/${id}`)}
+            className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+          >
+            返回课程详情
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-background p-3">

@@ -24,6 +24,9 @@ class Settings(BaseModel):
     minio_access_key: str = "minioadmin"
     minio_secret_key: str = "minioadmin"
     minio_bucket: str = "math-platform"
+    sandbox_python_image: str = "python:3.12-slim"
+    sandbox_javascript_image: str = "node:22-slim"
+    sandbox_cpp_image: str = "gcc:14"
     debug: bool = True
     allowed_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
     app_version: str = "0.1.0"
@@ -50,6 +53,9 @@ class Settings(BaseModel):
             minio_access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
             minio_secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
             minio_bucket=os.getenv("MINIO_BUCKET", "math-platform"),
+            sandbox_python_image=os.getenv("SANDBOX_PYTHON_IMAGE", "python:3.12-slim"),
+            sandbox_javascript_image=os.getenv("SANDBOX_JAVASCRIPT_IMAGE", "node:22-slim"),
+            sandbox_cpp_image=os.getenv("SANDBOX_CPP_IMAGE", "gcc:14"),
             debug=os.getenv("DEBUG", "true").lower() in {"1", "true", "yes", "on"},
             allowed_origins=allowed_origins or ["http://localhost:3000"],
             app_version=os.getenv("APP_VERSION", "0.1.0"),

@@ -1,4 +1,4 @@
-﻿from app.models.codelab import CodeLab, CodeSubmission
+from app.models.codelab import CodeLab, CodeLabTestCase, CodeSubmission
 from app.models.course import Chapter, ChapterProgress, Course, Enrollment
 from app.models.exam import Exam, ExamAttempt, ExamQuestion
 from app.models.note import Note, NoteShare
@@ -20,5 +20,6 @@ __all__ = [
     "Exam",
     "ExamAttempt",
     "CodeLab",
+    "CodeLabTestCase",
     "CodeSubmission",
 ]

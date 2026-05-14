@@ -3,6 +3,10 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppLayout } from "./components/layout/AppLayout";
 import { ApiError, useMe } from "./lib/api";
+import { CodeLabDetailPage } from "./pages/CodeLabDetailPage";
+import { CodeLabEditorPage } from "./pages/CodeLabEditorPage";
+import { CodeLabListPage } from "./pages/CodeLabListPage";
+import { CodeLabManagePage } from "./pages/CodeLabManagePage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { CourseEditorPage } from "./pages/CourseEditorPage";
 import { CourseListPage } from "./pages/CourseListPage";
@@ -152,11 +156,15 @@ export default function App() {
             <Route element={<RoleRoute allowedRoles={["teacher", "admin"]} />}>
               <Route path="/courses/:id/edit" element={<CourseEditorPage />} />
               <Route path="/qa/manage" element={<PlaceholderPage title="教师答疑管理" />} />
+              <Route path="/codelab/manage" element={<CodeLabManagePage />} />
+              <Route path="/codelab/new" element={<CodeLabEditorPage />} />
+              <Route path="/codelab/:id/edit" element={<CodeLabEditorPage />} />
             </Route>
 
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/notes/shared/:token" element={<SharedNotePage />} />
-            <Route path="/codelab" element={<PlaceholderPage title="实训" />} />
+            <Route path="/codelab" element={<CodeLabListPage />} />
+            <Route path="/codelab/:id" element={<CodeLabDetailPage />} />
             <Route path="/exam" element={<PlaceholderPage title="测验" />} />
             <Route path="/forbidden" element={<PlaceholderPage title="无权限访问该页面" />} />
           </Route>

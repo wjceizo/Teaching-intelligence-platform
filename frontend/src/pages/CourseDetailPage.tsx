@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { LectureReader } from "../components/course/LectureReader";
-import { useChapterContent, useCourse, useUpdateProgress } from "../lib/api";
+import { useChapterContent, useCodeLabs, useCourse, useUpdateProgress } from "../lib/api";
 import { useAuthStore } from "../stores/authStore";
 
 export function CourseDetailPage() {
@@ -21,6 +21,14 @@ export function CourseDetailPage() {
   const normalizedCurrentChapterId = chapters[currentIndex]?.id;
 
   const chapterQuery = useChapterContent(normalizedCurrentChapterId);
+  const chapterCodeLabsQuery = useCodeLabs(
+    {
+      course_id: id,
+      chapter_id: normalizedCurrentChapterId,
+    },
+    1,
+    6
+  );
   const updateProgressMutation = useUpdateProgress();
 
   const completedSet = useMemo(
@@ -135,6 +143,43 @@ export function CourseDetailPage() {
               })
             }
           />
+
+          {normalizedCurrentChapterId ? (
+            <div className="mt-4 rounded-xl border border-border bg-background p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">本章实训</h2>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/codelab/new?course_id=${id}&chapter_id=${normalizedCurrentChapterId}`)}
+                    className="rounded-md border border-border px-3 py-1 text-xs hover:bg-muted"
+                  >
+                    新建实训
+                  </button>
+                ) : null}
+              </div>
+              {chapterCodeLabsQuery.isLoading ? <p className="text-sm text-foreground/70">实训题加载中...</p> : null}
+              {chapterCodeLabsQuery.data?.data.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {chapterCodeLabsQuery.data.data.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`/codelab/${item.id}`}
+                      className="rounded-md border border-border p-3 text-sm hover:border-primary"
+                    >
+                      <span className="font-medium">{item.title}</span>
+                      <span className="mt-1 block text-xs text-foreground/60">
+                        {item.language} · 难度 {item.difficulty} · 满分 {item.max_score}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+              {chapterCodeLabsQuery.data?.data.length === 0 ? (
+                <p className="text-sm text-foreground/70">本章暂无实训题。</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

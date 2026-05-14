@@ -953,3 +953,285 @@ export function useChapterPublicNotes(chapterId?: string) {
     enabled: Boolean(chapterId),
   });
 }
+
+export interface CodeLabTestCase {
+  id?: string;
+  name: string;
+  input_data: string | null;
+  expected_output: string | null;
+  is_hidden: boolean;
+  points: number;
+  order_index: number;
+}
+
+export interface CodeLabSubmissionSummary {
+  id: string;
+  mode: "run" | "submit";
+  status: "pending" | "running" | "success" | "failed" | "error" | "timeout";
+  score: number;
+  max_score: number;
+  tests_passed: number;
+  tests_total: number;
+  execution_time_ms: number | null;
+  submitted_at: string;
+}
+
+export interface CodeLabListItem {
+  id: string;
+  title: string;
+  course_id: string;
+  course_title: string | null;
+  chapter_id: string | null;
+  chapter_title: string | null;
+  language: "python" | "javascript" | "cpp";
+  difficulty: number;
+  is_published: boolean;
+  max_score: number;
+  latest_submission: CodeLabSubmissionSummary | null;
+  best_score: number | null;
+  submissions_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CodeLab extends CodeLabListItem {
+  description: string;
+  teacher_id: string;
+  teacher: TeacherSummary | null;
+  starter_code: string;
+  time_limit_ms: number;
+  memory_limit_mb: number;
+  test_cases: CodeLabTestCase[];
+}
+
+export interface CodeLabRunResult {
+  test_case_id: string;
+  name: string;
+  is_hidden: boolean;
+  passed: boolean;
+  points: number;
+  actual_output: string | null;
+  expected_output: string | null;
+  input_data: string | null;
+  error: string | null;
+  execution_time_ms: number | null;
+}
+
+export interface CodeLabSubmission extends CodeLabSubmissionSummary {
+  codelab_id: string;
+  user_id: string;
+  code: string;
+  results: CodeLabRunResult[];
+  logs: string | null;
+}
+
+export interface CodeLabFilters {
+  course_id?: string;
+  chapter_id?: string;
+  language?: "python" | "javascript" | "cpp";
+  difficulty?: number;
+  is_published?: boolean;
+  q?: string;
+}
+
+export interface PaginatedCodeLabs {
+  data: CodeLabListItem[];
+  meta: {
+    page: number;
+    page_size: number;
+    total: number;
+  };
+}
+
+export interface PaginatedCodeLabSubmissions {
+  data: CodeLabSubmission[];
+  meta: {
+    page: number;
+    page_size: number;
+    total: number;
+  };
+}
+
+export interface CodeLabTestCaseInput {
+  name: string;
+  input_data: string;
+  expected_output: string;
+  is_hidden: boolean;
+  points: number;
+  order_index: number;
+}
+
+export interface CodeLabCreateInput {
+  title: string;
+  description: string;
+  course_id: string;
+  chapter_id?: string | null;
+  language: "python" | "javascript" | "cpp";
+  starter_code: string;
+  difficulty: number;
+  time_limit_ms: number;
+  memory_limit_mb: number;
+  is_published: boolean;
+  test_cases: CodeLabTestCaseInput[];
+}
+
+export interface CodeLabUpdateInput extends Partial<CodeLabCreateInput> {}
+
+function buildCodeLabParams(filters: CodeLabFilters, page: number, pageSize: number): string {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  if (filters.course_id) {
+    params.set("course_id", filters.course_id);
+  }
+  if (filters.chapter_id) {
+    params.set("chapter_id", filters.chapter_id);
+  }
+  if (filters.language) {
+    params.set("language", filters.language);
+  }
+  if (filters.difficulty) {
+    params.set("difficulty", String(filters.difficulty));
+  }
+  if (typeof filters.is_published === "boolean") {
+    params.set("is_published", String(filters.is_published));
+  }
+  if (filters.q?.trim()) {
+    params.set("q", filters.q.trim());
+  }
+  return params.toString();
+}
+
+export function useCodeLabs(filters: CodeLabFilters, page: number, pageSize = 20) {
+  return useQuery({
+    queryKey: ["codelabs", filters, page, pageSize],
+    queryFn: () => apiFetch<PaginatedCodeLabs>(`/v1/codelabs?${buildCodeLabParams(filters, page, pageSize)}`),
+  });
+}
+
+export function useCodeLab(id?: string) {
+  return useQuery({
+    queryKey: ["codelabs", id],
+    queryFn: () => apiFetch<CodeLab>(`/v1/codelabs/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useTeacherCodeLab(id?: string) {
+  return useQuery({
+    queryKey: ["teacher-codelabs", id],
+    queryFn: () => apiFetch<CodeLab>(`/v1/codelabs/${id}/teacher`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateCodeLab() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CodeLabCreateInput) =>
+      apiFetch<CodeLab>("/v1/codelabs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["codelabs"] });
+      void queryClient.invalidateQueries({ queryKey: ["teacher-codelabs"] });
+    },
+  });
+}
+
+export function useUpdateCodeLab() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: CodeLabUpdateInput }) =>
+      apiFetch<CodeLab>(`/v1/codelabs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (codelab) => {
+      void queryClient.invalidateQueries({ queryKey: ["codelabs"] });
+      void queryClient.invalidateQueries({ queryKey: ["codelabs", codelab.id] });
+      void queryClient.invalidateQueries({ queryKey: ["teacher-codelabs"] });
+    },
+  });
+}
+
+export function useDeleteCodeLab() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/v1/codelabs/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["codelabs"] });
+      void queryClient.invalidateQueries({ queryKey: ["teacher-codelabs"] });
+    },
+  });
+}
+
+export function usePublishCodeLab() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, is_published }: { id: string; is_published: boolean }) =>
+      apiFetch<CodeLab>(`/v1/codelabs/${id}/publish`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_published }),
+      }),
+    onSuccess: (codelab) => {
+      void queryClient.invalidateQueries({ queryKey: ["codelabs"] });
+      void queryClient.invalidateQueries({ queryKey: ["codelabs", codelab.id] });
+      void queryClient.invalidateQueries({ queryKey: ["teacher-codelabs"] });
+    },
+  });
+}
+
+export function useRunCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ codelabId, code }: { codelabId: string; code: string }) =>
+      apiFetch<CodeLabSubmission>(`/v1/codelabs/${codelabId}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      }),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["codelabs", variables.codelabId, "submissions"] });
+    },
+  });
+}
+
+export function useSubmitCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ codelabId, code }: { codelabId: string; code: string }) =>
+      apiFetch<CodeLabSubmission>(`/v1/codelabs/${codelabId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      }),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["codelabs"] });
+      void queryClient.invalidateQueries({ queryKey: ["codelabs", variables.codelabId] });
+      void queryClient.invalidateQueries({ queryKey: ["codelabs", variables.codelabId, "submissions"] });
+    },
+  });
+}
+
+export function useMyCodeSubmissions(codelabId?: string, page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ["codelabs", codelabId, "submissions", page, pageSize],
+    queryFn: () => apiFetch<PaginatedCodeLabSubmissions>(`/v1/codelabs/${codelabId}/submissions?page=${page}&page_size=${pageSize}`),
+    enabled: Boolean(codelabId),
+  });
+}
+
+export function useTeacherCodeSubmissions(codelabId?: string, page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ["teacher-codelabs", codelabId, "submissions", page, pageSize],
+    queryFn: () =>
+      apiFetch<PaginatedCodeLabSubmissions>(`/v1/codelabs/${codelabId}/submissions/all?page=${page}&page_size=${pageSize}`),
+    enabled: Boolean(codelabId),
+  });
+}
