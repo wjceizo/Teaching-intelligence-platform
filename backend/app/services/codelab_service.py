@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.codelab import CodeLab, CodeLabTestCase, CodeSubmission
-from app.models.course import Chapter, Course
+from app.models.course import Chapter, Course, Enrollment
 from app.models.user import User
-from app.schemas.codelab import CodeLabCreate, CodeLabUpdate, TestCaseCreate
+from app.schemas.codelab import CodeLabCreate, CodeLabUpdate, GenerateExpectedOutputsRequest, TestCaseCreate
 from app.services.sandbox_service import SandboxService, SandboxTestCase
 
 
@@ -45,6 +45,16 @@ class CodeLabService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chapter does not belong to course")
 
     @staticmethod
+    async def _assert_student_enrolled(db: AsyncSession, course_id: str, user: User) -> None:
+        if user.role != "student":
+            return
+        result = await db.execute(
+            select(Enrollment.id).where(Enrollment.course_id == course_id, Enrollment.user_id == user.id).limit(1)
+        )
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Enroll in this course to access its code labs")
+
+    @staticmethod
     async def _get_codelab_for_user(db: AsyncSession, codelab_id: str, user: User, teacher_view: bool = False) -> CodeLab:
         result = await db.execute(
             select(CodeLab)
@@ -69,6 +79,7 @@ class CodeLabService:
             if teacher_view:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot access this code lab")
         if codelab.is_published and not teacher_view:
+            await CodeLabService._assert_student_enrolled(db, codelab.course_id, user)
             return codelab
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot access this code lab")
 
@@ -84,8 +95,28 @@ class CodeLabService:
                 points=item.points,
                 order_index=item.order_index,
             )
-            for index, item in enumerate(test_cases)
+            for item in test_cases
         ]
+
+    @staticmethod
+    def _weighted_cases(codelab: CodeLab, selected_cases: Sequence[CodeLabTestCase]) -> list[SandboxTestCase]:
+        if not selected_cases:
+            return []
+        base_points = codelab.max_score // len(selected_cases)
+        remainder = codelab.max_score % len(selected_cases)
+        weighted: list[SandboxTestCase] = []
+        for index, item in enumerate(selected_cases):
+            weighted.append(
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "input_data": item.input_data,
+                    "expected_output": item.expected_output,
+                    "is_hidden": item.is_hidden,
+                    "points": base_points + (1 if index < remainder else 0),
+                }
+            )
+        return weighted
 
     @staticmethod
     async def list_codelabs(
@@ -103,6 +134,9 @@ class CodeLabService:
         conditions = []
         if user.role == "student":
             conditions.append(CodeLab.is_published.is_(True))
+            conditions.append(
+                CodeLab.course_id.in_(select(Enrollment.course_id).where(Enrollment.user_id == user.id))
+            )
         elif user.role == "teacher":
             conditions.append(or_(CodeLab.teacher_id == user.id, Course.teacher_id == user.id))
 
@@ -160,7 +194,9 @@ class CodeLabService:
             description=data.description,
             language=data.language,
             starter_code=data.starter_code,
+            solution_code=data.solution_code,
             difficulty=data.difficulty,
+            max_score=data.max_score,
             time_limit_ms=data.time_limit_ms,
             memory_limit_mb=data.memory_limit_mb,
             is_published=data.is_published,
@@ -225,24 +261,14 @@ class CodeLabService:
             code=code,
             mode=mode,
             status="running",
-            max_score=sum(item.points for item in selected_cases),
+            max_score=codelab.max_score,
             result_json=[],
         )
         db.add(submission)
         await db.commit()
         await db.refresh(submission)
 
-        sandbox_cases: list[SandboxTestCase] = [
-            {
-                "id": item.id,
-                "name": item.name,
-                "input_data": item.input_data,
-                "expected_output": item.expected_output,
-                "is_hidden": item.is_hidden,
-                "points": item.points,
-            }
-            for item in selected_cases
-        ]
+        sandbox_cases = CodeLabService._weighted_cases(codelab, selected_cases)
         result = await SandboxService.run_code_against_tests(
             code=code,
             language=codelab.language,
@@ -261,6 +287,45 @@ class CodeLabService:
         submission.execution_time_ms = int(result["execution_time_ms"])
         await db.commit()
         return await CodeLabService.get_submission(db, submission.id, user)
+
+    @staticmethod
+    async def generate_expected_outputs(data: GenerateExpectedOutputsRequest) -> dict[str, object]:
+        sandbox_cases: list[SandboxTestCase] = [
+            {
+                "id": str(index),
+                "name": item.name,
+                "input_data": item.input_data,
+                "expected_output": "",
+                "is_hidden": item.is_hidden,
+                "points": 1,
+            }
+            for index, item in enumerate(data.test_cases)
+        ]
+        result = await SandboxService.run_code_against_tests(
+            code=data.solution_code,
+            language=data.language,
+            test_cases=sandbox_cases,
+            time_limit_ms=data.time_limit_ms,
+            memory_limit_mb=data.memory_limit_mb,
+        )
+        raw_results = result.get("results", [])
+        generated = []
+        for index, item in enumerate(data.test_cases):
+            output = raw_results[index] if index < len(raw_results) and isinstance(raw_results[index], dict) else {}
+            error = output.get("error") if isinstance(output.get("error"), str) else None
+            generated.append(
+                {
+                    "name": item.name,
+                    "input_data": item.input_data,
+                    "expected_output": str(output.get("actual_output") or "").rstrip(),
+                    "is_hidden": item.is_hidden,
+                    "points": item.points,
+                    "order_index": item.order_index,
+                    "status": "error" if error else "success",
+                    "error": error,
+                }
+            )
+        return {"test_cases": generated, "logs": result.get("logs") if isinstance(result.get("logs"), str) else None}
 
     @staticmethod
     async def get_submission(db: AsyncSession, submission_id: str, user: User) -> CodeSubmission:

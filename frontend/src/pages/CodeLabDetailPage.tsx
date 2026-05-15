@@ -42,7 +42,7 @@ export function CodeLabDetailPage() {
   const submissions = useMemo(() => submissionsQuery.data?.data ?? [], [submissionsQuery.data?.data]);
   const canEdit =
     user?.role === "admin" ||
-    (user?.role === "teacher" && codelabQuery.data && (user.id === codelabQuery.data.teacher_id));
+    (user?.role === "teacher" && codelabQuery.data && user.id === codelabQuery.data.teacher_id);
   const isBusy = runMutation.isPending || submitMutation.isPending;
 
   if (!id) {
@@ -62,6 +62,8 @@ export function CodeLabDetailPage() {
   }
 
   const codelab = codelabQuery.data;
+  const publicTestCasesCount = codelab.test_cases.filter((testCase) => !testCase.is_hidden).length;
+  const hiddenTestCasesCount = codelab.test_cases.filter((testCase) => testCase.is_hidden).length;
 
   const handleRun = async () => {
     const result = await runMutation.mutateAsync({ codelabId: codelab.id, code });
@@ -90,8 +92,8 @@ export function CodeLabDetailPage() {
         <div>
           <h1 className="text-2xl font-semibold">{codelab.title}</h1>
           <p className="mt-1 text-sm text-foreground/70">
-            {codelab.course_title ?? "未关联课程"} {codelab.chapter_title ? `· ${codelab.chapter_title}` : ""} · {codelab.language}
-            · 难度 {codelab.difficulty} · 最高分 {codelab.best_score ?? 0}/{codelab.max_score}
+            {codelab.course_title ?? "未关联课程"} {codelab.chapter_title ? `/ ${codelab.chapter_title}` : ""} / {codelab.language}
+            / 难度 {codelab.difficulty} / 最高分 {codelab.best_score ?? 0}/{codelab.max_score}
           </p>
         </div>
         {canEdit ? (
@@ -109,13 +111,25 @@ export function CodeLabDetailPage() {
         <div className="min-w-0 space-y-4 rounded-md border border-border bg-surface p-4">
           <MarkdownRenderer content={codelab.description} />
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold">公开样例</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold">测试用例</h2>
+              <span className="text-xs text-muted-foreground">
+                公开 {publicTestCasesCount} 个{hiddenTestCasesCount > 0 ? ` / 隐藏 ${hiddenTestCasesCount} 个` : ""}
+              </span>
+            </div>
             {codelab.test_cases.length ? (
               codelab.test_cases.map((testCase) => (
-                <div key={testCase.id ?? testCase.name} className="rounded-md border border-border p-3">
+                <div
+                  key={testCase.id ?? testCase.name}
+                  className={`rounded-md border p-3 ${
+                    testCase.is_hidden ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20" : "border-border"
+                  }`}
+                >
                   <div className="mb-2 flex justify-between text-sm">
                     <span>{testCase.name}</span>
-                    <span>{testCase.points} 分</span>
+                    <span className={testCase.is_hidden ? "text-amber-700 dark:text-amber-300" : "text-primary"}>
+                      {testCase.is_hidden ? "隐藏用例" : "公开用例"}
+                    </span>
                   </div>
                   <div className="grid gap-2 text-xs md:grid-cols-2">
                     <pre className="overflow-auto rounded bg-muted p-2">输入{"\n"}{testCase.input_data ?? ""}</pre>
@@ -124,7 +138,7 @@ export function CodeLabDetailPage() {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-foreground/70">暂无公开样例。</p>
+              <p className="text-sm text-foreground/70">暂无测试用例。</p>
             )}
           </div>
         </div>
@@ -144,7 +158,7 @@ export function CodeLabDetailPage() {
             onRun={() => void handleRun()}
             onSubmit={() => void handleSubmit()}
           />
-          {(runMutation.isError || submitMutation.isError) ? (
+          {runMutation.isError || submitMutation.isError ? (
             <p className="text-sm text-destructive">
               {(runMutation.error ?? submitMutation.error) instanceof Error
                 ? (runMutation.error ?? submitMutation.error)?.message

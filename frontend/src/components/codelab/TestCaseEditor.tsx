@@ -73,13 +73,7 @@ export function TestCaseEditor({ testCases, onChange }: TestCaseEditorProps) {
               onChange={(event) => updateItem(index, { name: event.target.value })}
               className="min-w-[180px] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
             />
-            <input
-              type="number"
-              min={1}
-              value={item.points}
-              onChange={(event) => updateItem(index, { points: Math.max(1, Number(event.target.value) || 1) })}
-              className="w-24 rounded-md border border-border bg-background px-3 py-2 text-sm"
-            />
+            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">分数由题目满分平均分配</span>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

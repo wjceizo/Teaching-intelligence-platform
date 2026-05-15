@@ -12,6 +12,8 @@ from app.schemas.codelab import (
     CodeLabListItem,
     CodeLabResponse,
     CodeLabUpdate,
+    GenerateExpectedOutputsRequest,
+    GenerateExpectedOutputsResponse,
     PaginatedCodeLabResponse,
     PaginatedSubmissionResponse,
     PublishCodeLabRequest,
@@ -116,7 +118,7 @@ async def _build_list_item(db: AsyncSession, codelab: CodeLab, user: User) -> Co
         language=codelab.language,
         difficulty=codelab.difficulty,
         is_published=codelab.is_published,
-        max_score=sum(item.points for item in codelab.test_cases),
+        max_score=codelab.max_score,
         latest_submission=_submission_summary(latest),
         best_score=best_score,
         submissions_count=submissions_count,
@@ -151,11 +153,12 @@ async def _build_codelab_response(db: AsyncSession, codelab: CodeLab, user: User
         teacher=TeacherSummary.model_validate(codelab.teacher) if codelab.teacher else None,
         language=codelab.language,
         starter_code=codelab.starter_code,
+        solution_code=codelab.solution_code if can_view_hidden else None,
         difficulty=codelab.difficulty,
         time_limit_ms=codelab.time_limit_ms,
         memory_limit_mb=codelab.memory_limit_mb,
         is_published=codelab.is_published,
-        max_score=sum(item.points for item in codelab.test_cases),
+        max_score=codelab.max_score,
         test_cases=test_cases,
         latest_submission=_submission_summary(latest),
         best_score=best_score,
@@ -207,6 +210,16 @@ async def create_codelab(
 ) -> CodeLabResponse:
     codelab = await CodeLabService.create_codelab(db, data, current_user)
     return await _build_codelab_response(db, codelab, current_user)
+
+
+@router.post(
+    "/generate-expected-outputs",
+    response_model=GenerateExpectedOutputsResponse,
+    dependencies=[Depends(require_role("teacher", "admin"))],
+)
+async def generate_expected_outputs(data: GenerateExpectedOutputsRequest) -> GenerateExpectedOutputsResponse:
+    result = await CodeLabService.generate_expected_outputs(data)
+    return GenerateExpectedOutputsResponse.model_validate(result)
 
 
 @router.get("/submissions/{submission_id}", response_model=SubmissionResponse)

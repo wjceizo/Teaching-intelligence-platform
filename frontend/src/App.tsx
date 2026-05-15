@@ -11,10 +11,19 @@ import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { CourseEditorPage } from "./pages/CourseEditorPage";
 import { CourseListPage } from "./pages/CourseListPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ExamDetailPage } from "./pages/ExamDetailPage";
+import { ExamEditorPage } from "./pages/ExamEditorPage";
+import { ExamListPage } from "./pages/ExamListPage";
+import { ExamManagePage } from "./pages/ExamManagePage";
+import { ExamPage } from "./pages/ExamPage";
+import { ExamResultPage } from "./pages/ExamResultPage";
+import { ExamReviewPage } from "./pages/ExamReviewPage";
+import { ExamStatsPage } from "./pages/ExamStatsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotesPage } from "./pages/NotesPage";
 import { QACenterPage } from "./pages/QACenterPage";
 import { QuestionDetailPage } from "./pages/QuestionDetailPage";
+import { QuestionBankPage } from "./pages/QuestionBankPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { SharedNotePage } from "./pages/SharedNotePage";
 import { useAuthStore } from "./stores/authStore";
@@ -159,13 +168,22 @@ export default function App() {
               <Route path="/codelab/manage" element={<CodeLabManagePage />} />
               <Route path="/codelab/new" element={<CodeLabEditorPage />} />
               <Route path="/codelab/:id/edit" element={<CodeLabEditorPage />} />
+              <Route path="/exam/manage" element={<ExamManagePage />} />
+              <Route path="/exam/questions" element={<QuestionBankPage />} />
+              <Route path="/exam/new" element={<ExamEditorPage />} />
+              <Route path="/exam/:id/edit" element={<ExamEditorPage />} />
+              <Route path="/exam/:id/reviews" element={<ExamReviewPage />} />
+              <Route path="/exam/:id/stats" element={<ExamStatsPage />} />
             </Route>
 
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/notes/shared/:token" element={<SharedNotePage />} />
             <Route path="/codelab" element={<CodeLabListPage />} />
             <Route path="/codelab/:id" element={<CodeLabDetailPage />} />
-            <Route path="/exam" element={<PlaceholderPage title="测验" />} />
+            <Route path="/exam" element={<ExamListPage />} />
+            <Route path="/exam/:id" element={<ExamDetailPage />} />
+            <Route path="/exam/:id/attempt/:attemptId" element={<ExamPage />} />
+            <Route path="/exam/:id/result/:attemptId" element={<ExamResultPage />} />
             <Route path="/forbidden" element={<PlaceholderPage title="无权限访问该页面" />} />
           </Route>
         </Route>

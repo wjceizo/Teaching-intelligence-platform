@@ -51,7 +51,9 @@ class CodeLabCreate(BaseModel):
     chapter_id: str | None = None
     language: CodeLanguage
     starter_code: str = Field(min_length=1)
+    solution_code: str | None = None
     difficulty: int = Field(ge=1, le=5)
+    max_score: int = Field(default=100, ge=1, le=10000)
     time_limit_ms: int = Field(default=30000, ge=1000, le=120000)
     memory_limit_mb: int = Field(default=256, ge=64, le=1024)
     is_published: bool = False
@@ -71,7 +73,9 @@ class CodeLabUpdate(BaseModel):
     chapter_id: str | None = None
     language: CodeLanguage | None = None
     starter_code: str | None = Field(default=None, min_length=1)
+    solution_code: str | None = None
     difficulty: int | None = Field(default=None, ge=1, le=5)
+    max_score: int | None = Field(default=None, ge=1, le=10000)
     time_limit_ms: int | None = Field(default=None, ge=1000, le=120000)
     memory_limit_mb: int | None = Field(default=None, ge=64, le=1024)
     is_published: bool | None = None
@@ -124,6 +128,7 @@ class CodeLabResponse(BaseModel):
     teacher: TeacherSummary | None
     language: CodeLanguage
     starter_code: str
+    solution_code: str | None = None
     difficulty: int
     time_limit_ms: int
     memory_limit_mb: int
@@ -143,6 +148,30 @@ class RunCodeRequest(BaseModel):
 
 class SubmitCodeRequest(BaseModel):
     code: str = Field(min_length=1)
+
+
+class GenerateExpectedOutputsRequest(BaseModel):
+    language: CodeLanguage
+    solution_code: str = Field(min_length=1)
+    test_cases: list[TestCaseCreate] = Field(min_length=1)
+    time_limit_ms: int = Field(default=30000, ge=1000, le=120000)
+    memory_limit_mb: int = Field(default=256, ge=64, le=1024)
+
+
+class GeneratedExpectedOutput(BaseModel):
+    name: str
+    input_data: str
+    expected_output: str
+    is_hidden: bool
+    points: int
+    order_index: int
+    status: SubmissionStatus
+    error: str | None = None
+
+
+class GenerateExpectedOutputsResponse(BaseModel):
+    test_cases: list[GeneratedExpectedOutput]
+    logs: str | None = None
 
 
 class TestCaseRunResult(BaseModel):

@@ -428,6 +428,20 @@ export function CourseEditorPage() {
           </button>
           <button
             type="button"
+            onClick={() => navigate(`/exam/new?course_id=${id}${selectedChapterId ? `&chapter_id=${selectedChapterId}` : ""}`)}
+            className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+          >
+            新建测验
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/exam/manage")}
+            className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+          >
+            管理测验
+          </button>
+          <button
+            type="button"
             onClick={() => navigate(`/courses/${id}`)}
             className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
           >

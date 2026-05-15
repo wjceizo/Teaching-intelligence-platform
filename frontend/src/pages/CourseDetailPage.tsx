@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { LectureReader } from "../components/course/LectureReader";
-import { useChapterContent, useCodeLabs, useCourse, useUpdateProgress } from "../lib/api";
+import { useChapterContent, useCodeLabs, useCourse, useExams, useUpdateProgress } from "../lib/api";
 import { useAuthStore } from "../stores/authStore";
 
 export function CourseDetailPage() {
@@ -22,6 +22,14 @@ export function CourseDetailPage() {
 
   const chapterQuery = useChapterContent(normalizedCurrentChapterId);
   const chapterCodeLabsQuery = useCodeLabs(
+    {
+      course_id: id,
+      chapter_id: normalizedCurrentChapterId,
+    },
+    1,
+    6
+  );
+  const chapterExamsQuery = useExams(
     {
       course_id: id,
       chapter_id: normalizedCurrentChapterId,
@@ -177,6 +185,46 @@ export function CourseDetailPage() {
               ) : null}
               {chapterCodeLabsQuery.data?.data.length === 0 ? (
                 <p className="text-sm text-foreground/70">本章暂无实训题。</p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {normalizedCurrentChapterId ? (
+            <div className="mt-4 rounded-xl border border-border bg-background p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">本章测验</h2>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/exam/new?course_id=${id}&chapter_id=${normalizedCurrentChapterId}`)}
+                    className="rounded-md border border-border px-3 py-1 text-xs hover:bg-muted"
+                  >
+                    新建测验
+                  </button>
+                ) : null}
+              </div>
+              {chapterExamsQuery.isLoading ? <p className="text-sm text-foreground/70">测验加载中...</p> : null}
+              {chapterExamsQuery.data?.data.length ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  {chapterExamsQuery.data.data.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`/exam/${item.id}`}
+                      className="rounded-md border border-border p-3 text-sm hover:border-primary"
+                    >
+                      <span className="font-medium">
+                        {item.title}
+                        {item.status === "draft" ? <span className="ml-2 text-xs text-destructive">草稿</span> : null}
+                      </span>
+                      <span className="mt-1 block text-xs text-foreground/60">
+                        {item.question_count} 题 · 满分 {item.total_score} · 限时 {item.time_limit_minutes} 分钟
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+              {chapterExamsQuery.data?.data.length === 0 ? (
+                <p className="text-sm text-foreground/70">本章暂无测验。</p>
               ) : null}
             </div>
           ) : null}

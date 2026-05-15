@@ -1,7 +1,8 @@
 from app.routers.auth import router as auth_router
 from app.routers.codelabs import router as codelabs_router
 from app.routers.courses import router as courses_router
+from app.routers.exams import router as exams_router
 from app.routers.notes import router as notes_router
 from app.routers.questions import router as questions_router
 
-__all__ = ["auth_router", "codelabs_router", "courses_router", "notes_router", "questions_router"]
+__all__ = ["auth_router", "codelabs_router", "courses_router", "exams_router", "notes_router", "questions_router"]

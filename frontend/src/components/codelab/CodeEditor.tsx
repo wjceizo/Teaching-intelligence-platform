@@ -83,7 +83,7 @@ export function CodeEditor({ code, language, isBusy, onChange, onReset, onRun, o
     <div
       className={
         isFullscreen
-          ? "fixed inset-2 z-50 flex flex-col rounded-md border border-border bg-surface shadow-xl md:inset-4"
+          ? "fixed inset-0 z-50 flex flex-col border border-border bg-white p-2 shadow-xl dark:bg-neutral-950 md:p-4"
           : "flex min-h-[420px] flex-col rounded-md border border-border bg-surface md:min-h-[520px]"
       }
     >

@@ -29,6 +29,16 @@ export function ConsolePanel({ activeSubmission, submissions, loadingHistory }: 
     activeSubmission && activeSubmission.max_score > 0
       ? Math.round((activeSubmission.score / activeSubmission.max_score) * 100)
       : 0;
+  const hiddenSummaryResults =
+    activeSubmission?.results.filter(
+      (result) =>
+        result.is_hidden &&
+        result.input_data === null &&
+        result.expected_output === null &&
+        result.actual_output === null
+    ) ?? [];
+  const detailedResults =
+    activeSubmission?.results.filter((result) => !hiddenSummaryResults.includes(result)) ?? [];
 
   return (
     <div className="rounded-md border border-border bg-surface">
@@ -68,7 +78,18 @@ export function ConsolePanel({ activeSubmission, submissions, loadingHistory }: 
                   <div className="h-full bg-primary" style={{ width: `${scorePercent}%` }} />
                 </div>
                 <div className="space-y-2">
-                  {activeSubmission.results.map((result) => (
+                  {hiddenSummaryResults.length > 0 ? (
+                    <div className="rounded-md border border-border p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-medium">隐藏用例</span>
+                        <span className="text-xs text-muted-foreground">
+                          通过 {hiddenSummaryResults.filter((result) => result.passed).length}/{hiddenSummaryResults.length}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">隐藏用例只显示通过数量，不展示单个用例结果。</p>
+                    </div>
+                  ) : null}
+                  {detailedResults.map((result) => (
                     <div key={`${result.test_case_id}-${result.name}`} className="rounded-md border border-border p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-medium">

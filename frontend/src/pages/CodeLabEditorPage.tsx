@@ -9,9 +9,11 @@ import {
   useCourse,
   useCourses,
   useCreateCodeLab,
+  useGenerateExpectedOutputs,
   useTeacherCodeLab,
   useUpdateCodeLab,
 } from "../lib/api";
+import { useAuthStore } from "../stores/authStore";
 
 const defaultCode = {
   python: "n = int(input())\nprint(n)\n",
@@ -34,11 +36,13 @@ export function CodeLabEditorPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const isEdit = Boolean(id);
   const coursesQuery = useCourses(1, 100);
   const teacherCodeLabQuery = useTeacherCodeLab(id);
   const createMutation = useCreateCodeLab();
   const updateMutation = useUpdateCodeLab();
+  const generateExpectedOutputsMutation = useGenerateExpectedOutputs();
   const [showPreview, setShowPreview] = useState(false);
   const [form, setForm] = useState<CodeLabCreateInput>({
     title: "",
@@ -47,7 +51,9 @@ export function CodeLabEditorPage() {
     chapter_id: searchParams.get("chapter_id"),
     language: "python",
     starter_code: defaultCode.python,
+    solution_code: "",
     difficulty: 2,
+    max_score: 100,
     time_limit_ms: 30000,
     memory_limit_mb: 256,
     is_published: false,
@@ -67,7 +73,9 @@ export function CodeLabEditorPage() {
       chapter_id: data.chapter_id,
       language: data.language,
       starter_code: data.starter_code,
+      solution_code: data.solution_code ?? "",
       difficulty: data.difficulty,
+      max_score: data.max_score,
       time_limit_ms: data.time_limit_ms,
       memory_limit_mb: data.memory_limit_mb,
       is_published: data.is_published,
@@ -83,8 +91,16 @@ export function CodeLabEditorPage() {
   }, [teacherCodeLabQuery.data]);
 
   const chapters = selectedCourseQuery.data?.chapters ?? [];
-  const totalScore = useMemo(() => form.test_cases.reduce((sum, item) => sum + item.points, 0), [form.test_cases]);
-  const isBusy = createMutation.isPending || updateMutation.isPending;
+  const teacherCourses = useMemo(
+    () =>
+      coursesQuery.data?.data.filter((course) => user?.role === "admin" || course.teacher_id === user?.id) ?? [],
+    [coursesQuery.data?.data, user?.id, user?.role]
+  );
+  const perCaseScore = useMemo(
+    () => (form.test_cases.length ? form.max_score / form.test_cases.length : form.max_score),
+    [form.max_score, form.test_cases.length]
+  );
+  const isBusy = createMutation.isPending || updateMutation.isPending || generateExpectedOutputsMutation.isPending;
 
   const updateForm = (patch: Partial<CodeLabCreateInput>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -107,6 +123,37 @@ export function CodeLabEditorPage() {
     };
     const saved = isEdit && id ? await updateMutation.mutateAsync({ id, input: payload }) : await createMutation.mutateAsync(payload);
     navigate(`/codelab/${saved.id}`);
+  };
+
+  const generateExpectedOutputs = async () => {
+    if (!form.solution_code?.trim()) {
+      window.alert("请先填写完整代码，才能生成期望输出。");
+      return;
+    }
+    if (!form.test_cases.length) {
+      window.alert("请先添加测试用例。");
+      return;
+    }
+    const result = await generateExpectedOutputsMutation.mutateAsync({
+      language: form.language,
+      solution_code: form.solution_code,
+      test_cases: form.test_cases.map((item, index) => ({ ...item, order_index: index })),
+      time_limit_ms: form.time_limit_ms,
+      memory_limit_mb: form.memory_limit_mb,
+    });
+    updateForm({
+      test_cases: result.test_cases.map((item) => ({
+        name: item.name,
+        input_data: item.input_data,
+        expected_output: item.expected_output,
+        is_hidden: item.is_hidden,
+        points: item.points,
+        order_index: item.order_index,
+      })),
+    });
+    if (result.logs) {
+      window.alert(`生成完成，但执行日志提示：${result.logs}`);
+    }
   };
 
   if (isEdit && teacherCodeLabQuery.isLoading) {
@@ -156,7 +203,7 @@ export function CodeLabEditorPage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
               <option value="">选择课程</option>
-              {coursesQuery.data?.data.map((course) => (
+              {teacherCourses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.title}
                 </option>
@@ -201,15 +248,23 @@ export function CodeLabEditorPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1 text-sm font-medium">
+              满分
+              <input type="number" min={1} value={form.max_score} onChange={(event) => updateForm({ max_score: Number(event.target.value) || 100 })} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </label>
+            <label className="block space-y-1 text-sm font-medium">
               时间 ms
               <input type="number" min={1000} value={form.time_limit_ms} onChange={(event) => updateForm({ time_limit_ms: Number(event.target.value) })} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1 text-sm font-medium">
               内存 MB
               <input type="number" min={64} value={form.memory_limit_mb} onChange={(event) => updateForm({ memory_limit_mb: Number(event.target.value) })} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             </label>
           </div>
-          <p className="text-sm text-foreground/70">当前满分：{totalScore}</p>
+          <p className="text-sm text-foreground/70">
+            当前满分：{form.max_score}，每个测试用例约 {perCaseScore.toFixed(2)} 分
+          </p>
         </aside>
 
         <div className="space-y-4">
@@ -230,6 +285,19 @@ export function CodeLabEditorPage() {
           <label className="block space-y-2 rounded-md border border-border bg-background p-4 text-sm font-medium">
             初始代码
             <textarea value={form.starter_code} onChange={(event) => updateForm({ starter_code: event.target.value })} className="min-h-56 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm" />
+          </label>
+
+          <label className="block space-y-2 rounded-md border border-border bg-background p-4 text-sm font-medium">
+            完整代码（可选，用于生成期望输出）
+            <textarea value={form.solution_code ?? ""} onChange={(event) => updateForm({ solution_code: event.target.value })} className="min-h-56 w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-sm" />
+            <button
+              type="button"
+              onClick={() => void generateExpectedOutputs()}
+              disabled={isBusy || !form.solution_code?.trim()}
+              className="w-fit rounded-md border border-border px-3 py-2 text-sm hover:bg-muted disabled:opacity-50"
+            >
+              {generateExpectedOutputsMutation.isPending ? "生成中..." : "根据完整代码生成期望输出"}
+            </button>
           </label>
 
           <div className="rounded-md border border-border bg-background p-4">

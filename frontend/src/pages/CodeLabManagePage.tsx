@@ -84,7 +84,13 @@ export function CodeLabManagePage() {
                 </td>
                 <td className="px-3 py-2 uppercase">{item.language}</td>
                 <td className="px-3 py-2">{item.difficulty}</td>
-                <td className="px-3 py-2">{item.is_published ? "已发布" : "草稿"}</td>
+                <td className="px-3 py-2">
+                  {item.is_published ? (
+                    <span className="text-foreground/70">已发布</span>
+                  ) : (
+                    <span className="font-medium text-destructive">草稿</span>
+                  )}
+                </td>
                 <td className="px-3 py-2">{item.max_score}</td>
                 <td className="px-3 py-2">{item.submissions_count}</td>
                 <td className="px-3 py-2">

@@ -11,6 +11,8 @@ export function CodeLabListPage() {
   const [filters, setFilters] = useState<CodeLabFilters>({});
   const codelabsQuery = useCodeLabs(filters, page, 12);
   const coursesQuery = useCourses(1, 100);
+  const selectableCourses =
+    coursesQuery.data?.data.filter((course) => user?.role !== "student" || course.is_enrolled) ?? [];
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -34,7 +36,7 @@ export function CodeLabListPage() {
             <Link to="/codelab/manage" className="rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted">
               管理题目
             </Link>
-            <Link to="/codelab/new" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+            <Link to="/codelab/new" className="rounded-md border border-border bg-surface px-3 py-2 text-sm hover:bg-muted">
               新建题目
             </Link>
           </div>
@@ -57,7 +59,7 @@ export function CodeLabListPage() {
           className="rounded-md border border-border bg-surface px-3 py-2 text-sm"
         >
           <option value="">全部课程</option>
-          {coursesQuery.data?.data.map((course) => (
+          {selectableCourses.map((course) => (
             <option key={course.id} value={course.id}>
               {course.title}
             </option>
@@ -104,7 +106,12 @@ export function CodeLabListPage() {
           <Link key={item.id} to={`/codelab/${item.id}`} className="rounded-md border border-border bg-surface p-4 hover:border-primary">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-semibold">{item.title}</h2>
+                <h2 className="font-semibold">
+                  {item.title}
+                  {!item.is_published ? (
+                    <span className="ml-2 text-xs font-normal italic text-success">（草稿，未发布）</span>
+                  ) : null}
+                </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {item.course_title ?? "未关联课程"} {item.chapter_title ? `/ ${item.chapter_title}` : ""}
                 </p>

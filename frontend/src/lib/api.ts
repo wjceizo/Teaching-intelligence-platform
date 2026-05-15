@@ -999,6 +999,7 @@ export interface CodeLab extends CodeLabListItem {
   teacher_id: string;
   teacher: TeacherSummary | null;
   starter_code: string;
+  solution_code: string | null;
   time_limit_ms: number;
   memory_limit_mb: number;
   test_cases: CodeLabTestCase[];
@@ -1068,7 +1069,9 @@ export interface CodeLabCreateInput {
   chapter_id?: string | null;
   language: "python" | "javascript" | "cpp";
   starter_code: string;
+  solution_code?: string | null;
   difficulty: number;
+  max_score: number;
   time_limit_ms: number;
   memory_limit_mb: number;
   is_published: boolean;
@@ -1076,6 +1079,30 @@ export interface CodeLabCreateInput {
 }
 
 export interface CodeLabUpdateInput extends Partial<CodeLabCreateInput> {}
+
+export interface GenerateExpectedOutputsInput {
+  language: "python" | "javascript" | "cpp";
+  solution_code: string;
+  test_cases: CodeLabTestCaseInput[];
+  time_limit_ms: number;
+  memory_limit_mb: number;
+}
+
+export interface GeneratedExpectedOutput {
+  name: string;
+  input_data: string;
+  expected_output: string;
+  is_hidden: boolean;
+  points: number;
+  order_index: number;
+  status: "pending" | "running" | "success" | "failed" | "error" | "timeout";
+  error: string | null;
+}
+
+export interface GenerateExpectedOutputsResponse {
+  test_cases: GeneratedExpectedOutput[];
+  logs: string | null;
+}
 
 function buildCodeLabParams(filters: CodeLabFilters, page: number, pageSize: number): string {
   const params = new URLSearchParams({
@@ -1187,6 +1214,17 @@ export function usePublishCodeLab() {
   });
 }
 
+export function useGenerateExpectedOutputs() {
+  return useMutation({
+    mutationFn: (input: GenerateExpectedOutputsInput) =>
+      apiFetch<GenerateExpectedOutputsResponse>("/v1/codelabs/generate-expected-outputs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+  });
+}
+
 export function useRunCode() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -1233,5 +1271,487 @@ export function useTeacherCodeSubmissions(codelabId?: string, page = 1, pageSize
     queryFn: () =>
       apiFetch<PaginatedCodeLabSubmissions>(`/v1/codelabs/${codelabId}/submissions/all?page=${page}&page_size=${pageSize}`),
     enabled: Boolean(codelabId),
+  });
+}
+
+export type ExamQuestionType = "single" | "multi" | "fill" | "short" | "proof";
+export type ExamStatus = "draft" | "published" | "closed";
+export type ExamAttemptStatus = "in_progress" | "submitted" | "pending_review" | "graded" | "expired";
+export type ExamResultPolicy = "after_submit" | "after_end" | "manual";
+export type ExamAnswerValue = string | string[] | Record<string, unknown> | null;
+
+export interface ExamQuestionOption {
+  id: string;
+  label: string;
+  content: string;
+}
+
+export interface ExamQuestion {
+  id: string;
+  course_id: string;
+  chapter_id: string | null;
+  teacher_id: string | null;
+  type: ExamQuestionType;
+  content: string;
+  options: ExamQuestionOption[] | null;
+  answer: ExamAnswerValue;
+  explanation: string | null;
+  difficulty: number;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExamQuestionInput {
+  course_id: string;
+  chapter_id?: string | null;
+  type: ExamQuestionType;
+  content: string;
+  options?: ExamQuestionOption[] | null;
+  answer: ExamAnswerValue;
+  explanation?: string | null;
+  difficulty: number;
+  tags: string[];
+}
+
+export interface ExamQuestionInPaperInput {
+  question_id: string;
+  points: number;
+  order_index: number;
+}
+
+export interface ExamQuestionInPaper {
+  id: string;
+  question_id: string;
+  points: number;
+  order_index: number;
+  question: ExamQuestion;
+}
+
+export interface ExamAttemptSummary {
+  id: string;
+  status: ExamAttemptStatus;
+  score: number | null;
+  total_score: number;
+  submitted_at: string | null;
+  graded_at: string | null;
+}
+
+export interface ExamListItem {
+  id: string;
+  title: string;
+  course_id: string;
+  course_title: string | null;
+  chapter_id: string | null;
+  chapter_title: string | null;
+  status: ExamStatus;
+  total_score: number;
+  pass_score: number;
+  time_limit_minutes: number;
+  start_time: string | null;
+  end_time: string | null;
+  question_count: number;
+  attempt_status: ExamAttemptStatus | null;
+  best_score: number | null;
+  latest_attempt_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Exam {
+  id: string;
+  title: string;
+  description: string | null;
+  course_id: string;
+  course_title: string | null;
+  chapter_id: string | null;
+  chapter_title: string | null;
+  teacher_id: string | null;
+  status: ExamStatus;
+  total_score: number;
+  pass_score: number;
+  time_limit_minutes: number;
+  start_time: string | null;
+  end_time: string | null;
+  max_attempts: number;
+  is_shuffled: boolean;
+  show_result_policy: ExamResultPolicy;
+  questions: ExamQuestionInPaper[];
+  latest_attempt: ExamAttemptSummary | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExamInput {
+  course_id: string;
+  chapter_id?: string | null;
+  title: string;
+  description?: string | null;
+  total_score: number;
+  pass_score?: number | null;
+  time_limit_minutes: number;
+  start_time?: string | null;
+  end_time?: string | null;
+  max_attempts: number;
+  is_shuffled: boolean;
+  show_result_policy: ExamResultPolicy;
+  questions: ExamQuestionInPaperInput[];
+  status: ExamStatus;
+}
+
+export interface AttemptStartResponse {
+  attempt_id: string;
+  exam_id: string;
+  status: ExamAttemptStatus;
+  questions: ExamQuestionInPaper[];
+  time_limit_minutes: number;
+  started_at: string;
+  deadline_at: string | null;
+  saved_answers: Record<string, ExamAnswerValue>;
+}
+
+export interface AttemptAnswerResult {
+  question_id: string;
+  user_answer: ExamAnswerValue;
+  is_correct: boolean | null;
+  score: number | null;
+  max_score: number;
+  standard_answer: ExamAnswerValue;
+  explanation: string | null;
+  teacher_comment: string | null;
+  pending_review: boolean;
+}
+
+export interface AttemptResult {
+  attempt_id: string;
+  exam_id: string;
+  status: ExamAttemptStatus;
+  score: number | null;
+  auto_score: number;
+  manual_score: number;
+  total_score: number;
+  pass_score: number;
+  submitted_at: string | null;
+  graded_at: string | null;
+  can_view_detail: boolean;
+  answers: AttemptAnswerResult[];
+}
+
+export interface ExamAttemptListItem {
+  id: string;
+  exam_id: string;
+  user_id: string;
+  student_name: string | null;
+  status: ExamAttemptStatus;
+  score: number | null;
+  auto_score: number;
+  manual_score: number;
+  total_score: number;
+  violation_count: number;
+  started_at: string;
+  submitted_at: string | null;
+  graded_at: string | null;
+}
+
+export interface ExamStats {
+  participants_count: number;
+  submitted_count: number;
+  pending_review_count: number;
+  avg_score: number | null;
+  pass_rate: number | null;
+  max_score: number | null;
+  min_score: number | null;
+  score_distribution: Array<{ label: string; count: number }>;
+  question_stats: Array<{
+    question_id: string;
+    content: string;
+    type: ExamQuestionType;
+    max_score: number;
+    answered_count: number;
+    correct_rate: number | null;
+    avg_score: number | null;
+    pending_review_count: number;
+  }>;
+}
+
+export interface ExamFilters {
+  course_id?: string;
+  chapter_id?: string;
+  status?: ExamStatus;
+  q?: string;
+}
+
+export interface ExamQuestionFilters {
+  course_id?: string;
+  chapter_id?: string;
+  type?: ExamQuestionType;
+  difficulty?: number;
+  q?: string;
+}
+
+export interface PaginatedExams {
+  data: ExamListItem[];
+  meta: { page: number; page_size: number; total: number };
+}
+
+export interface PaginatedExamQuestions {
+  data: ExamQuestion[];
+  meta: { page: number; page_size: number; total: number };
+}
+
+export interface PaginatedExamAttempts {
+  data: ExamAttemptListItem[];
+  meta: { page: number; page_size: number; total: number };
+}
+
+function buildExamParams(filters: ExamFilters, page: number, pageSize: number): string {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (filters.course_id) params.set("course_id", filters.course_id);
+  if (filters.chapter_id) params.set("chapter_id", filters.chapter_id);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.q?.trim()) params.set("q", filters.q.trim());
+  return params.toString();
+}
+
+function buildExamQuestionParams(filters: ExamQuestionFilters, page: number, pageSize: number): string {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (filters.course_id) params.set("course_id", filters.course_id);
+  if (filters.chapter_id) params.set("chapter_id", filters.chapter_id);
+  if (filters.type) params.set("type", filters.type);
+  if (filters.difficulty) params.set("difficulty", String(filters.difficulty));
+  if (filters.q?.trim()) params.set("q", filters.q.trim());
+  return params.toString();
+}
+
+export function useExams(filters: ExamFilters, page: number, pageSize = 20) {
+  return useQuery({
+    queryKey: ["exams", filters, page, pageSize],
+    queryFn: () => apiFetch<PaginatedExams>(`/v1/exams?${buildExamParams(filters, page, pageSize)}`),
+  });
+}
+
+export function useExam(id?: string) {
+  return useQuery({
+    queryKey: ["exams", id],
+    queryFn: () => apiFetch<Exam>(`/v1/exams/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCreateExam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ExamInput) =>
+      apiFetch<Exam>("/v1/exams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["exams"] });
+    },
+  });
+}
+
+export function useUpdateExam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<ExamInput> }) =>
+      apiFetch<Exam>(`/v1/exams/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (exam) => {
+      void queryClient.invalidateQueries({ queryKey: ["exams"] });
+      void queryClient.invalidateQueries({ queryKey: ["exams", exam.id] });
+    },
+  });
+}
+
+export function usePublishExam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<Exam>(`/v1/exams/${id}/publish`, { method: "PATCH" }),
+    onSuccess: (exam) => {
+      void queryClient.invalidateQueries({ queryKey: ["exams"] });
+      void queryClient.invalidateQueries({ queryKey: ["exams", exam.id] });
+    },
+  });
+}
+
+export function useCloseExam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<Exam>(`/v1/exams/${id}/close`, { method: "PATCH" }),
+    onSuccess: (exam) => {
+      void queryClient.invalidateQueries({ queryKey: ["exams"] });
+      void queryClient.invalidateQueries({ queryKey: ["exams", exam.id] });
+    },
+  });
+}
+
+export function useDeleteExam() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/v1/exams/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["exams"] });
+    },
+  });
+}
+
+export function useExamQuestions(filters: ExamQuestionFilters, page: number, pageSize = 20) {
+  return useQuery({
+    queryKey: ["exam-questions", filters, page, pageSize],
+    queryFn: () => apiFetch<PaginatedExamQuestions>(`/v1/exams/questions?${buildExamQuestionParams(filters, page, pageSize)}`),
+  });
+}
+
+export function useCreateExamQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ExamQuestionInput) =>
+      apiFetch<ExamQuestion>("/v1/exams/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["exam-questions"] });
+    },
+  });
+}
+
+export function useUpdateExamQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<ExamQuestionInput> }) =>
+      apiFetch<ExamQuestion>(`/v1/exams/questions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["exam-questions"] });
+    },
+  });
+}
+
+export function useDeleteExamQuestion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<void>(`/v1/exams/questions/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["exam-questions"] });
+    },
+  });
+}
+
+export function useStartExamAttempt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (examId: string) => apiFetch<AttemptStartResponse>(`/v1/exams/${examId}/attempts`, { method: "POST" }),
+    onSuccess: (_, examId) => {
+      void queryClient.invalidateQueries({ queryKey: ["exams", examId] });
+    },
+  });
+}
+
+export function useSaveExamDraft() {
+  return useMutation({
+    mutationFn: ({ attemptId, answers }: { attemptId: string; answers: Record<string, ExamAnswerValue> }) =>
+      apiFetch<AttemptStartResponse>(`/v1/exams/attempts/${attemptId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      }),
+  });
+}
+
+export function useExamAttempt(attemptId?: string) {
+  return useQuery({
+    queryKey: ["exam-attempt", attemptId],
+    queryFn: () => apiFetch<AttemptStartResponse>(`/v1/exams/attempts/${attemptId}`),
+    enabled: Boolean(attemptId),
+  });
+}
+
+export function useSubmitExamAttempt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ attemptId, answers }: { attemptId: string; answers: Record<string, ExamAnswerValue> }) =>
+      apiFetch<AttemptResult>(`/v1/exams/attempts/${attemptId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["exams"] });
+      void queryClient.invalidateQueries({ queryKey: ["exams", result.exam_id] });
+      void queryClient.invalidateQueries({ queryKey: ["exam-result", result.attempt_id] });
+    },
+  });
+}
+
+export function useExamResult(attemptId?: string) {
+  return useQuery({
+    queryKey: ["exam-result", attemptId],
+    queryFn: () => apiFetch<AttemptResult>(`/v1/exams/attempts/${attemptId}/result`),
+    enabled: Boolean(attemptId),
+  });
+}
+
+export function useReportExamViolation() {
+  return useMutation({
+    mutationFn: ({ attemptId, reason }: { attemptId: string; reason: string }) =>
+      apiFetch<AttemptStartResponse>(`/v1/exams/attempts/${attemptId}/violations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      }),
+  });
+}
+
+export function useExamAttempts(examId?: string, page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ["exam-attempts", examId, page, pageSize],
+    queryFn: () => apiFetch<PaginatedExamAttempts>(`/v1/exams/${examId}/attempts?page=${page}&page_size=${pageSize}`),
+    enabled: Boolean(examId),
+  });
+}
+
+export function usePendingReviews(examId?: string, page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: ["exam-reviews", examId, page, pageSize],
+    queryFn: () => apiFetch<PaginatedExamAttempts>(`/v1/exams/${examId}/reviews?page=${page}&page_size=${pageSize}`),
+    enabled: Boolean(examId),
+  });
+}
+
+export function useGradeExamAttempt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ attemptId, answers }: { attemptId: string; answers: Array<{ question_id: string; score: number; teacher_comment?: string | null }> }) =>
+      apiFetch<AttemptResult>(`/v1/exams/attempts/${attemptId}/grade`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["exam-attempts", result.exam_id] });
+      void queryClient.invalidateQueries({ queryKey: ["exam-reviews", result.exam_id] });
+      void queryClient.invalidateQueries({ queryKey: ["exam-stats", result.exam_id] });
+      void queryClient.invalidateQueries({ queryKey: ["exam-result", result.attempt_id] });
+    },
+  });
+}
+
+export function useExamStats(examId?: string) {
+  return useQuery({
+    queryKey: ["exam-stats", examId],
+    queryFn: () => apiFetch<ExamStats>(`/v1/exams/${examId}/stats`),
+    enabled: Boolean(examId),
   });
 }
